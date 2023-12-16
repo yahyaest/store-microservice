@@ -53,6 +53,7 @@ class Product(models.Model):
     description = models.TextField(max_length=DEFAULT_TEXT_SIZE, null=True, blank=True)
     price = models.FloatField(blank=True, null=True)
     inventory = models.IntegerField(validators=[MinValueValidator(1)])
+    external_args = models.JSONField(null=True, blank=True)
     collection = models.ForeignKey(
         Collection, on_delete=models.PROTECT, related_name='products')
     promotions = models.ManyToManyField(Promotion, blank=True)
