@@ -34,9 +34,11 @@ CORS_ALLOW_ALL_ORIGINS = True
 # Settings from environment
 env = environ.Env(
     DATABASE_URL=(str, 'psql://postgres:postgres@postgres:5432/store'),
+    GATEWAY_BASE_URL=(str, None)
 )
 
 DATABASE_URL = env('DATABASE_URL')
+GATEWAY_BASE_URL = env('GATEWAY_BASE_URL')
 
 # Application definition
 
@@ -64,6 +66,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'store_app.api.middleware.auth_middleware.JWTAuthMiddleware',
 ]
 
 ROOT_URLCONF = 'store_app.urls'
@@ -144,12 +147,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
-    # 'DEFAULT_PERMISSION_CLASSES': (
-    #     'rest_framework.permissions.IsAuthenticated',
-    # ),
-    # 'DEFAULT_AUTHENTICATION_CLASSES' : (
-    #     'rest_framework.authentication.SessionAuthentication',
-    # ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES' : (
+        # 'rest_framework.authentication.SessionAuthentication',
+        'store_app.api.auth.user.JWTAuthentication',
+    ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']

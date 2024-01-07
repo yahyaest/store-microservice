@@ -6,7 +6,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
+from .permissions import IsAdminOrReadOnly
 from .pagination import DefaultPagination
 from .filters import ProductFilter
 from .models import Cart, CartItem, Collection, Order, OrderItem, Payment, Product, ProductImage, Promotion, Review, Shipping, Tag
@@ -20,9 +22,22 @@ class ProductViewSet(ModelViewSet):
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = ProductFilter
     pagination_class = DefaultPagination
-    # permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [IsAdminOrReadOnly]
     search_fields = ['title', 'description']
     ordering_fields = ['price', 'last_update']
+
+    # def list(self, request, *args, **kwargs):
+    #     # Access the current user from the request
+    #     current_user = request.user
+
+    #     # Print user information (you can customize this)
+    #     print(f"User is: {current_user.__dict__}")
+    #     print(f"Token is: {request.token}")
+
+    #     # Continue with your existing logic to retrieve and serialize products
+    #     queryset = self.filter_queryset(self.get_queryset())
+    #     serializer = self.get_serializer(queryset, many=True)
+    #     return Response(serializer.data)
 
     def get_serializer_context(self):
         return {'request': self.request}
