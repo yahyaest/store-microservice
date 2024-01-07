@@ -7,6 +7,7 @@ class JWTAuthentication(BaseAuthentication):
     def authenticate(self, request):
         # JWTAuthMiddleware is already initialized by Django middleware and has set current_user to the request
         user_dict = request.current_user
+        token = request.token
 
         if user_dict is None:
             return None
@@ -23,7 +24,7 @@ class JWTAuthentication(BaseAuthentication):
         # Create a simple user object without saving to the database
         user = SimpleUser(user_id, user_createdAt, user_updatedAt, user_email, user_username, user_role, user_phone)
 
-        return user, None
+        return user, token
 
 class SimpleUser:
     def __init__(self, user_id, createdAt, updatedAt, email, username, role, phone):
