@@ -5,26 +5,29 @@ from rest_framework.exceptions import AuthenticationFailed
 
 class JWTAuthentication(BaseAuthentication):
     def authenticate(self, request):
-        # JWTAuthMiddleware is already initialized by Django middleware and has set current_user to the request
-        user_dict = request.current_user
-        token = request.token
+        try:
+            # JWTAuthMiddleware is already initialized by Django middleware and has set current_user to the request
+            user_dict = request.current_user
+            token = request.token
 
-        if user_dict is None:
-            return None
+            if user_dict is None:
+                return None
 
-        # You can adapt this part based on the structure of your user dictionary
-        user_id = user_dict.get('id')
-        user_createdAt = user_dict.get('createdAt')
-        user_updatedAt = user_dict.get('updatedAt')
-        user_email = user_dict.get('email')
-        user_username = user_dict.get('username')
-        user_role = user_dict.get('role')
-        user_phone = user_dict.get('phone')
+            # You can adapt this part based on the structure of your user dictionary
+            user_id = user_dict.get('id')
+            user_createdAt = user_dict.get('createdAt')
+            user_updatedAt = user_dict.get('updatedAt')
+            user_email = user_dict.get('email')
+            user_username = user_dict.get('username')
+            user_role = user_dict.get('role')
+            user_phone = user_dict.get('phone')
 
-        # Create a simple user object without saving to the database
-        user = SimpleUser(user_id, user_createdAt, user_updatedAt, user_email, user_username, user_role, user_phone)
+            # Create a simple user object without saving to the database
+            user = SimpleUser(user_id, user_createdAt, user_updatedAt, user_email, user_username, user_role, user_phone)
 
-        return user, token
+            return user, token
+        except:
+            return None, None
 
 class SimpleUser:
     def __init__(self, user_id, createdAt, updatedAt, email, username, role, phone):

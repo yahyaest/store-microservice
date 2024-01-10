@@ -18,7 +18,10 @@ class JWTAuthMiddleware:
         # Get the JWT token from the Authorization header
         authorization_header = request.headers.get('Authorization', '')
         if not authorization_header.startswith('Bearer '):
-            return JsonResponse({'error': 'Unauthorized'}, status=401)
+            # return JsonResponse({'error': 'Unauthorized'}, status=401)
+            # Continue processing the request
+            response = self.get_response(request)
+            return response
 
         token = authorization_header.split(' ')[1]
 
