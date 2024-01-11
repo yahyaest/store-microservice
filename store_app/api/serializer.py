@@ -2,6 +2,8 @@ from rest_framework import serializers
 from .models import Cart, CartItem, Collection, Order, OrderItem, Payment, Product, ProductImage, Promotion, Review, Shipping, Tag
 from django.db import transaction
 from .signals import order_created
+import traceback
+import logging
 
 class CollectionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -30,18 +32,62 @@ class ProductImageSerializer(serializers.ModelSerializer):
         fields = ['id', 'created_at', 'image']
 
 class ProductSerializer(serializers.ModelSerializer):
-    images = ProductImageSerializer(many=True, read_only=True)
+    product_images = serializers.ListField(required=False, allow_null=False)
+    product_tags = serializers.ListField(required=False, allow_null=False)
 
     class Meta:
         model = Product
         fields = ('id', 'created_at', 'last_update', 'title', 'slug', 'description', 'inventory',
-                    'price', 'price_with_tax', 'collection', 'images')
+                    'price', 'price_with_tax', 'collection', 'external_args', 'product_images', 'product_tags')
 
     price_with_tax = serializers.SerializerMethodField(
         method_name='calculate_tax')
 
     def calculate_tax(self, product: Product):
         return product.price * 1.1
+    
+    def to_internal_value(self, data):
+        try:
+            return super().to_internal_value(data)
+        except serializers.ValidationError as exc:
+            # Log the validation errors
+            logging.error(f"Validation error during deserialization: {exc.detail}")
+            raise exc
+    
+    def create(self, validated_data):
+        try:
+            logging.info(f"validated_data is {validated_data}")
+            product_images = validated_data.pop('product_images', [])
+            product_tags = validated_data.pop('product_tags', [])
+
+            logging.info(f"product_images : {product_images}")
+            logging.info(f"product_tags : {product_tags}")
+
+            # Create the Product instance without images and tags
+            product_instance = Product.objects.create(**validated_data)
+
+            # Get the id of the newly created Product instance
+            product_id = product_instance.id
+
+            # Create ProductImage instances and associate them with the product
+            for product_image in product_images:
+                image_data = {"product": product_instance, "image": product_image}
+                ProductImage.objects.create(**image_data)
+
+            # Create Tag instances and associate them with the product
+            tags_instances = []
+            for product_tag in product_tags:
+                tag_data = {"label" : product_tag}
+                tag_instance, created = Tag.objects.get_or_create(**tag_data)
+                tags_instances.append(tag_instance)
+
+            product_instance.tags.set(tags_instances)
+
+            return product_instance
+        
+        except Exception as e:
+            logging.error(f"{traceback.format_exc()}")
+            raise e
 
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
