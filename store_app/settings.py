@@ -14,6 +14,7 @@ from pathlib import Path
 import os
 import environ
 import logging
+from store_app.tools.helpers import *
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -159,14 +160,84 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
 }
 
+
+import datetime
+import logging
+import http.client
+
+# Workaround httpclient logger
+
+httpclient_logger = logging.getLogger("requests.packages.urllib3")
+
+
+def httpclient_log(*args):
+    httpclient_logger.log(logging.DEBUG, " ".join(args))
+
+# mask the print() built-in in the http.client module to use
+# logging instead
+http.client.print = httpclient_log
+# enable debugging
+http.client.HTTPConnection.debuglevel = 1
+logging.captureWarnings(True)
+
+
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': False,
+    'disable_existing_loggers': True,
     'formatters': {
         'default': {
             'format': '[%(asctime)s] [%(name)s] %(levelname)s::(%(process)d %(threadName)s)::%(module)s:%(lineno)d - %(message)s - %(msecs)d'
         },
     },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'level': 'DEBUG',
+            'formatter':'default'
+        },
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        # 'django.db.backends': {
+        #     'handlers': ['console'],
+        #     'level': 'DEBUG',
+        #     'propagate': False,
+        # },
+        'django.server': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'Store': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'py.warnings': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'urllib3.connectionpool': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'requests.packages.urllib3': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        }
+    }
 }
 
 

@@ -3,7 +3,7 @@ from .models import Cart, CartItem, Collection, Order, OrderItem, Payment, Produ
 from django.db import transaction
 from .signals import order_created
 import traceback
-import logging
+from store_app.tools.helpers import *
 
 class CollectionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -52,12 +52,11 @@ class ProductSerializer(serializers.ModelSerializer):
             return super().to_internal_value(data)
         except serializers.ValidationError as exc:
             # Log the validation errors
-            logging.error(f"Validation error during deserialization: {exc.detail}")
+            logger.error(f"Validation error during deserialization: {exc.detail}")
             raise exc
     
     def create(self, validated_data):
         try:
-            logging.info(f"validated_data is {validated_data}")
             product_images = validated_data.pop('product_images', [])
             product_tags = validated_data.pop('product_tags', [])
             product_promotions = validated_data.pop('product_promotions', [])
@@ -95,7 +94,7 @@ class ProductSerializer(serializers.ModelSerializer):
             return product_instance
         
         except Exception as e:
-            logging.error(f"{traceback.format_exc()}")
+            logger.error(f"{traceback.format_exc()}")
             raise e
 
 class ReviewSerializer(serializers.ModelSerializer):
