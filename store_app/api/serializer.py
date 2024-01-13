@@ -8,7 +8,7 @@ import logging
 class CollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
-        fields = ['id', 'created_at', 'title', 'products_count']
+        fields = ['id', 'created_at', 'title', 'description', 'products_count']
 
     products_count = serializers.IntegerField(read_only=True)
 
@@ -34,11 +34,12 @@ class ProductImageSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     product_images = serializers.ListField(required=False, allow_null=False)
     product_tags = serializers.ListField(required=False, allow_null=False)
+    product_promotions = serializers.ListField(required=False, allow_null=False)
 
     class Meta:
         model = Product
         fields = ('id', 'created_at', 'last_update', 'title', 'slug', 'description', 'inventory',
-                    'price', 'price_with_tax', 'collection', 'external_args', 'product_images', 'product_tags')
+                    'price', 'price_with_tax', 'collection', 'external_args', 'product_images', 'product_tags', 'product_promotions')
 
     price_with_tax = serializers.SerializerMethodField(
         method_name='calculate_tax')
@@ -59,29 +60,37 @@ class ProductSerializer(serializers.ModelSerializer):
             logging.info(f"validated_data is {validated_data}")
             product_images = validated_data.pop('product_images', [])
             product_tags = validated_data.pop('product_tags', [])
+            product_promotions = validated_data.pop('product_promotions', [])
 
-            logging.info(f"product_images : {product_images}")
-            logging.info(f"product_tags : {product_tags}")
+            with transaction.atomic():
 
-            # Create the Product instance without images and tags
-            product_instance = Product.objects.create(**validated_data)
+                # Create the Product instance without images and tags
+                product_instance = Product.objects.create(**validated_data)
 
-            # Get the id of the newly created Product instance
-            product_id = product_instance.id
+                # Get the id of the newly created Product instance
+                product_id = product_instance.id
 
-            # Create ProductImage instances and associate them with the product
-            for product_image in product_images:
-                image_data = {"product": product_instance, "image": product_image}
-                ProductImage.objects.create(**image_data)
+                # Create ProductImage instances and associate them with the product
+                for product_image in product_images:
+                    image_data = {"product": product_instance, "image": product_image}
+                    ProductImage.objects.create(**image_data)
 
-            # Create Tag instances and associate them with the product
-            tags_instances = []
-            for product_tag in product_tags:
-                tag_data = {"label" : product_tag}
-                tag_instance, created = Tag.objects.get_or_create(**tag_data)
-                tags_instances.append(tag_instance)
+                # Create Tag instances and associate them with the product
+                tags_instances = []
+                for product_tag in product_tags:
+                    tag_data = {"label" : product_tag}
+                    tag_instance, created = Tag.objects.get_or_create(**tag_data)
+                    tags_instances.append(tag_instance)
 
-            product_instance.tags.set(tags_instances)
+                product_instance.tags.set(tags_instances)
+
+                # Create Promotion instances and associate them with the product
+                promotions_instances = []
+                for product_promotion in product_promotions:
+                    promotion_instance, created = Promotion.objects.get_or_create(**product_promotion)
+                    promotions_instances.append(promotion_instance)
+
+                product_instance.promotions.set(promotions_instances)
 
             return product_instance
         
