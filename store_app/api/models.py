@@ -133,8 +133,10 @@ class CartItem(models.Model):
 class Review(models.Model):
     class Meta:
         db_table = 'reviews'
+        unique_together = ('product', 'customer_email')
 
     created_at = models.DateTimeField(auto_now_add=True)
+    last_update = models.DateTimeField(auto_now=True)
     product = models.ForeignKey(
         Product, on_delete=models.CASCADE, related_name='reviews')
     customer_name =  models.CharField(max_length=DEFAULT_VARCHAR_SIZE, null=True, blank=True)
