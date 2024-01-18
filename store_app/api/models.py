@@ -140,6 +140,7 @@ class Review(models.Model):
     product = models.ForeignKey(
         Product, on_delete=models.CASCADE, related_name='reviews')
     customer_name =  models.CharField(max_length=DEFAULT_VARCHAR_SIZE, null=True, blank=True)
+    customer_image =  models.CharField(max_length=DEFAULT_VARCHAR_SIZE, null=True, blank=True)
     customer_email =  models.EmailField(max_length=DEFAULT_VARCHAR_SIZE, null=True, blank=True)
     comment = models.TextField(max_length=DEFAULT_TEXT_SIZE, blank=True, null=True)
     rating = models.PositiveSmallIntegerField(
