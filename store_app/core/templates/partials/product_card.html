@@ -1,0 +1,42 @@
+<a href="{% url 'product' product.slug %}">
+  <div
+    class="card w-80 h-80 m-5 bg-warning rounded-xl shadow-xl transition ease-in-out delay-300 hover:scale-105"
+  >
+    <figure class="pt-10">
+      <img
+        src="{{product.external_args.background_image}}"
+        alt="{{product.slug}}"
+        class="h-40 w-72 rounded-xl"
+      />
+    </figure>
+    <div class="card-body items-center text-center">
+      <h2
+        class="{% if product.title|length > 30 %}text-xs font-semibold{% else %}text-lg font-bold{% endif %} text-error"
+      >
+        {{ product.title }}
+      </h2>
+      <div class="flex flex-row">
+        {% for platform in product.external_args.platforms %} 
+          {% if platform == 'pc' %}
+          <i class="mx-1 fa-brands fa-windows"></i>
+          {% elif platform == 'linux' %}
+          <i class="mx-1 fa-brands fa-linux"></i>
+          {% elif platform == 'android' %}
+          <i class="mx-1 fa-brands fa-android"></i>
+          {% elif platform == 'ios' %}
+          <i class="fa-brands fa-app-store-ios"></i>
+          {% elif platform == 'playstation' %}
+          <i class="mx-1 fa-brands fa-playstation"></i>
+          {% elif platform == 'xbox' %}
+          <i class="mx-1 fa-brands fa-xbox"></i>
+          {% else %}
+          <i></i>
+          {% endif %} 
+        {% endfor %}
+        <div class="badge badge-info rounded-md mx-5">
+          {{product.external_args.metacritic}}
+        </div>
+      </div>
+    </div>
+  </div>
+</a>

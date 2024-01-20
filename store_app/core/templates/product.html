@@ -1,0 +1,149 @@
+{% extends 'base.html' %} 
+{% load custom_filters %} 
+{% block title%}{{product.title}}{% endblock %} 
+{%block content %}
+<div
+  class="mx-auto bg-cover bg-no-repeat bg-top md:p-16"
+  style="
+  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 1)),url('{{ product.external_args.background_image }}');"
+>
+  <div class="flex flex-col lg:flex-row">
+    <div class="w-full lg:w-2/3 mx-2">
+      <h1 class="text-center text-amber-600 text-3xl font-bold">
+        {{product.title}}
+      </h1>
+
+      <div class="flex flex-col my-3">
+        <p class="text-gray-600 font-bold">About</p>
+        <div class="text-warning"> {{ product.description|linebreaksbr|safe }}</div>
+      </div>
+
+
+      <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {% comment %} Platforms {% endcomment %}
+        <div class="flex flex-col my-3">
+        <p class="text-gray-600 font-bold">Platforms</p>
+          <div>
+            {% for platform in product.external_args.platforms %}
+            <div class="badge badge-info mx-1">
+              {% if platform == 'pc' %}
+              <i class="mx-1 fa-brands fa-windows"></i>
+              {% elif platform == 'linux' %}
+              <i class="mx-1 fa-brands fa-linux"></i>
+              {% elif platform == 'android' %}
+              <i class="mx-1 fa-brands fa-android"></i>
+              {% elif platform == 'ios' %}
+              <i class="fa-brands fa-app-store-ios"></i>
+              {% elif platform == 'playstation' %}
+              <i class="mx-1 fa-brands fa-playstation"></i>
+              {% elif platform == 'xbox' %}
+              <i class="mx-1 fa-brands fa-xbox"></i>
+              {% else %}
+              <i class="mx-1 fa-solid fa-gamepad"></i>
+              {% endif %} 
+              {{platform}}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        {% comment %} Genre {% endcomment %}
+        <div class="flex flex-col my-3">
+          <p class="text-gray-600 font-bold">Genre</p>
+            <div>
+              {% for genre in product.external_args.genres %}
+              <div class="badge badge-error mx-1">{{genre}}</div>
+              {% endfor %}
+            </div>
+          </div>
+
+        {% comment %} Developer {% endcomment %}
+        <div class="flex flex-col my-3">
+          <p class="text-gray-600 font-bold">Developer</p>
+            <div class="text-warning">
+              {{ product.external_args.developers|list_to_string }}
+            </div>
+          </div>
+
+        {% comment %} Publisher {% endcomment %}
+        <div class="flex flex-col my-3">
+          <p class="text-gray-600 font-bold">Publisher</p>
+            <div div class="text-warning">
+              {{ product.external_args.publishers|list_to_string }}
+            </div>
+        </div>
+
+        {% comment %} Release date {% endcomment %}
+        <div class="flex flex-col my-3">
+          <p class="text-gray-600 font-bold">Release date</p>
+            <div class="text-warning">
+              {{ product.external_args.released }}
+            </div>
+        </div>
+
+        {% comment %} Metascore {% endcomment %}
+        <div class="flex flex-col my-3">
+          <p class="text-gray-600 font-bold">Metascore</p>
+              <div class="badge badge-warning">
+                {{product.external_args.metacritic}}
+              </div>
+          </div>
+
+      </div>
+
+      <div class="grid grid-cols-1 gap-4">
+        {% comment %} Tags {% endcomment %}
+        <div class="flex flex-col my-3">
+          <p class="text-gray-600 font-bold">Tags</p>
+            <div>
+              {% for tag in product_tags %}
+              <div class="badge badge-success mx-1">
+                {{tag.label}}
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+        {% comment %} Website {% endcomment %}
+        <div class="flex flex-col my-3">
+          <p class="text-gray-600 font-bold">Website</p>
+            <div>
+              <button class="btn btn-active btn-accent btn-wide">
+                <a href={{ product.external_args.website }}>Visit</a>
+              </button>
+            </div>
+          </div>
+      </div>
+    </div>
+
+    <div class="w-full lg:w-1/3 mx-2">
+      {% comment %} product_images {% endcomment %}
+      <div class="grid grid-cols-1 gap-6 mx-2 sm:grid-cols-2 sm:mx-1">
+        {% for product_image in product_images %}
+          <img src={{product_image.image}} alt={{product_image.image}} class="cursor-pointer" onclick="toggleFullScreen(this)" />
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  {% comment %} Reviews {% endcomment %}
+  {% include 'partials/product_reviews.html' %}
+
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+  <script>
+    let isLoading = false
+    function toggleFullScreen(element) {
+      if (!document.fullscreenElement) {
+        element.requestFullscreen().catch((err) => {
+          console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    }
+  </script>
+{% endblock %}

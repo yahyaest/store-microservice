@@ -1,0 +1,12 @@
+{% extends 'base.html' %} 
+{% block title %}Products{% endblock %}
+
+{% block content %}
+<div class="mx-auto md:p-16">
+    <div class="flex flex-wrap justify-center">
+        {% for product in products %} 
+            {% include 'partials/product_card.html' %} 
+        {%endfor %}
+    </div>
+</div>
+{% endblock %}
