@@ -1,0 +1,24 @@
+<form id="submit-form" hx-get="{% url 'htmx' %}" hx-target="body">
+ {{form.as_p}}
+ <button class="btn btn-primary" type="submit" onclick="attachRequest({'operation': 'retarget'})"
+ > Submit </button>
+</form>
+
+{% block scripts %}
+<script>
+  function getCSRFToken() {
+    // Helper function to get the CSRF token from the page
+    return document.getElementsByName('csrfmiddlewaretoken')[0].value;
+  }
+
+  function attachRequest(obj) {
+    var csrfToken = getCSRFToken();
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/htmx", true);
+    xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    xhr.setRequestHeader("X-CSRFToken", csrfToken);  // Include the CSRF token
+    xhr.send(JSON.stringify(obj));
+  }
+
+</script>
+{% endblock %}

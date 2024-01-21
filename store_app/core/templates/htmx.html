@@ -1,0 +1,141 @@
+{% extends 'base.html' %} 
+{% load custom_filters %} 
+{% block title %}HTMX{%endblock %} 
+{% block content%}
+{% csrf_token %}
+<header class="hero min-h-screen">
+  <div class="hero-content text-center">
+    <div>
+      <h1 class="text-5xl text-warning font-bold my-10">Django HTMX Demo</h1>
+      <div class="htmx-middleware my-10">
+        <h2 class="text-3xl text-success font-bold">
+          1- HtmxMiddleware class and request.htmx property
+        </h2>
+        <a
+          class="btn btn-info my-2"
+          id="htmx-link"
+          hx-get="{% url 'htmx' %}"
+          hx-target="#random-btn"
+          onclick="attachRequest({'operation': 'trigger'})"
+          >Trigger</a
+        >
+        <br />
+        <a
+          class="btn btn-info my-2"
+          id="htmx-api"
+          hx-get="http://localhost:5000/api/tags/5/"
+          hx-target="#random-btn"
+          >API</a
+        >
+        <br />
+        <button class="btn btn-secondary my-2" id="random-btn">Target</button>
+      </div>
+      <div class="htmx-http-classes my-10">
+        <h2 class="text-3xl text-success font-bold">2- HttpResponse Classes</h2>
+        <a
+          class="btn btn-info my-2"
+          hx-get="{% url 'htmx' %}"
+          onclick="attachRequest({'operation': 'redirect'})"
+        >
+          Redirect
+        </a>
+        <br />
+        <a 
+          class="btn btn-info my-2" 
+          hx-get="{% url 'htmx' %}" 
+          onclick="attachRequest({'operation': 'refresh'})"
+        >
+          Refrech
+        </a>
+        <br />
+        <a 
+          class="btn btn-info my-2" 
+          hx-get="{% url 'htmx' %}" 
+          onclick="attachRequest({'operation': 'location-page'})"
+        >
+          Location Page
+        </a>
+        <br />
+        <a 
+          class="btn btn-info my-2" 
+          hx-get="{% url 'htmx' %}" 
+          onclick="attachRequest({'operation': 'location-div'})"
+        >
+          Location Div
+        </a>
+        <div id="htmx-swap">Div to Swap</div>
+        <br />
+        <a 
+          class="btn btn-info my-2" 
+          hx-get="{% url 'htmx' %}" 
+          onclick="attachRequest({'operation': 'stop-polling'})"
+        >
+          Stop Polling
+        </a>
+        <div id="htmx-polling">Div to poll</div>
+        <div 
+          hx-trigger="every 20s" 
+          hx-target="#htmx-polling"
+          hx-get="http://localhost:5000/htmx/http"
+          hx-swap="beforeend"
+        >
+        </div>
+      </div>
+      <div class="htmx-http-functions my-10">
+        <h2 class="text-3xl text-success font-bold">3- HttpResponse Functions</h2>
+        <a 
+          class="btn btn-info my-2" 
+          hx-get="{% url 'htmx' %}" 
+          {% comment %} hx-push-url="/lorem" {% endcomment %}
+          onclick="attachRequest({'operation': 'push-url'})"
+        >
+          Push Url
+        </a>
+        <br>
+        <a 
+        class="btn btn-info my-2" 
+        hx-get="{% url 'htmx' %}"
+        id="htmx-reswap-trigger"
+        hx-target="#htmx-resawp"
+        onclick="attachRequest({'operation': 'reswap'})"
+        >
+          Reswap
+        </a>
+
+        <ul id="htmx-resawp"></ul>
+
+        <br>
+        <a 
+        class="btn btn-info my-2" 
+        >
+          Retarget
+        </a>
+
+        <div id="main-content">
+          {% include 'partials/partial_htmx_form.html' %}
+        </div>
+
+
+      </div>
+    </div>
+  </div>
+</header>
+{% endblock %} 
+{% block scripts %}
+<script>
+  function getCSRFToken() {
+    // Helper function to get the CSRF token from the page
+    return document.getElementsByName('csrfmiddlewaretoken')[0].value;
+  }
+
+  function attachRequest(obj) {
+    var csrfToken = getCSRFToken();
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/htmx", true);
+    xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    xhr.setRequestHeader("X-CSRFToken", csrfToken);  // Include the CSRF token
+    xhr.send(JSON.stringify(obj));
+  }
+
+</script>
+{% endblock %}
