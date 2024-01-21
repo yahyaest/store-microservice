@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'multiselectfield',
+    'django_htmx',
     'store_app.core',
     'store_app.api'
 ]
@@ -68,6 +69,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'django_htmx.middleware.HtmxMiddleware',
     'store_app.api.middleware.auth_middleware.JWTAuthMiddleware',
 ]
 

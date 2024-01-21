@@ -1,5 +1,6 @@
+import json
 from django import template
-from django.http import QueryDict
+from store_app import settings
 
 
 register = template.Library()
@@ -19,4 +20,18 @@ def split(value, arg):
 def list_to_string(value):
     return ', '.join(value)
 
+@register.filter()
+def get_gateway_url(value):
+    return settings.GATEWAY_BASE_URL
+
+@register.filter()
+def get_user_image(value):
+    user = json.loads(value)
+    return user['avatarUrl']
+
+@register.filter()
+def tag_value(value):
+    with open(f'./store_app/core/htmx-operation/operation-{value}.txt', 'w') as file:
+        file.write(value)
+    return value
 

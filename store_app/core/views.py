@@ -92,6 +92,41 @@ def htmx_http(request):
 def home_page(request):
     return render(request=request, template_name='home.html')
 
+def login_page(request):
+    if request.method == "POST":
+        form = LoginForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data.get('email')
+            password = form.cleaned_data.get('password')
+            data = {"email":email,"password": password}
+            gateway = Gateway()
+            token,error = gateway.login(data)
+            if token:
+                logger.info(f"token is : {token}")
+                current_user = gateway.get_current_user()
+                current_user_image = gateway.get_current_user_image()
+                if current_user_image:
+                    current_user["avatarUrl"] = current_user_image['filename']
+                logger.info(f"current_user is : {current_user}")
+
+                response = HttpResponseRedirect('/')
+                response.set_cookie("token", token, secure=True, httponly=True)
+                response.set_cookie("user", json.dumps(current_user), secure=True, httponly=True)
+                return response
+            else:
+                if error:
+                    error_message = error["message"]
+                return render(request, 'login.html', {'form': form, 'error_message': error_message if error_message else None})            
+    else:
+        form = LoginForm()
+    return render(request=request, template_name='login.html',context={'form': form})
+
+def logout_view(request):
+    response = HttpResponseRedirect('/')
+    response.delete_cookie("token")
+    response.delete_cookie("user")
+    return response
+
 def products_page(request):
     products = Product.objects.all()
     return render(request=request, template_name='products.html',context={'products': products})
