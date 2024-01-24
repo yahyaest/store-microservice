@@ -96,10 +96,17 @@
               class="btn btn-ghost btn-circle avatar"
             >
               <div class="w-10 rounded-full">
+                {% if request.COOKIES.user|is_user_image %}
                 <img
-                  alt="Tailwind CSS Navbar component"
+                  alt="user_avatar"
                   src="{{gateway_url|get_gateway_url}}/{{request.COOKIES.user|get_user_image}}"  
                 />
+                {% else %}
+                <img
+                  alt="user_avatar"
+                  src="{{request.COOKIES.user|get_user_image}}"  
+                />
+                {% endif %}
               </div>
             </div>
             <ul

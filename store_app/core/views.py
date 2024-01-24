@@ -3,13 +3,31 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Avg
 from django.middleware.csrf import get_token
 from django.views.decorators.csrf import csrf_exempt
+from django import forms
 from django.http import HttpResponse, HttpResponseRedirect
 from django_htmx.http import HttpResponseClientRedirect, HttpResponseClientRefresh, HttpResponseLocation, HttpResponseStopPolling, push_url, reswap, retarget, trigger_client_event
 from store_app.clients.gateway import Gateway
 from store_app import settings
-from store_app.core.forms import HtmxForm, LoginForm
+from store_app.core.forms import HtmxForm, LoginForm, RegisterForm
 from store_app.api.models import Product, ProductImage, Review
 from store_app.tools.helpers import *
+
+
+def getUserToken(request):
+    cookies_obj = {}
+    cookies_str : str = request.headers.get('Cookie', None)
+    cookies_list = cookies_str.split(";")
+    for cookie in cookies_list:
+        key = cookie.split("=")[0].strip()
+        try:
+            import ast
+            value = ast.literal_eval(cookie.split("=")[1].strip())
+            value = json.loads(value)
+        except :
+            value = cookie.split("=")[1].strip()
+        cookies_obj[f'{key}'] = value
+    return cookies_obj
+
 
 
 # Create your views here.
@@ -93,6 +111,12 @@ def home_page(request):
     return render(request=request, template_name='home.html')
 
 def login_page(request):
+    # If token in cookies redirect home
+    cookies = getUserToken(request)
+    if cookies.get('token', None):
+        response = HttpResponseRedirect('/')
+        return response
+    
     if request.method == "POST":
         form = LoginForm(request.POST)
         if form.is_valid():
@@ -120,6 +144,65 @@ def login_page(request):
     else:
         form = LoginForm()
     return render(request=request, template_name='login.html',context={'form': form})
+
+def register_page(request):
+    # If token in cookies redirect home
+    cookies = getUserToken(request)
+    if cookies.get('token', None):
+        response = HttpResponseRedirect('/')
+        return response
+    
+    if request.method == "POST":
+        form = RegisterForm(request.POST)
+        if 'image' in request.FILES:
+            form.files['image'] = request.FILES['image']
+        if form.is_valid():
+            try:
+                email = form.cleaned_data.get('email')
+                username = form.cleaned_data.get('username')
+                password = form.cleaned_data.get('password')
+                phone = form.cleaned_data.get('phone')
+                image_file = request.FILES.get('image')
+                data = {
+                    "email":email, 
+                    "username": username, 
+                    "password": password,
+                    "phone": phone,
+                    }
+                logger.info(f"image_file is : {image_file} with type : {type(image_file)}")
+
+                logger.info(f"image_file dict is : {image_file.__dict__}  ")
+                gateway = Gateway()
+                token,error = gateway.register(data)
+                if token:
+                    logger.info(f"token is : {token}")
+                    data,error2 = gateway.upload_image(image_file, email)
+                    logger.info(f"user image data is : {data}")
+                    current_user = gateway.get_current_user()
+                    current_user_image = gateway.get_current_user_image()
+                    if current_user_image:
+                        current_user["avatarUrl"] = current_user_image['filename']
+                    logger.info(f"current_user is : {current_user}")
+
+                    response = HttpResponseRedirect('/')
+                    response.set_cookie("token", token, secure=True, httponly=True)
+                    response.set_cookie("user", json.dumps(current_user), secure=True, httponly=True)
+                    return response
+                else:
+                    if error:
+                        error_message = error["message"]
+                    return render(request, 'register.html', {'form': form, 'error_message': error_message if error_message else None})
+            except forms.ValidationError as e:
+                error_message = str(e)
+                return render(request, 'register.html', {'form': form, 'error_message': error_message})  
+        else:
+            error_message = form.errors.get('password')
+            logger.error(f"Form not valid : {error_message}")   
+            return render(request, 'register.html', {'form': form, 'error_message': error_message})
+
+    else:
+        form = RegisterForm()
+    return render(request=request, template_name='register.html', context={'form': form})
 
 def logout_view(request):
     response = HttpResponseRedirect('/')

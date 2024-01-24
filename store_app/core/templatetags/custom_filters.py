@@ -27,7 +27,14 @@ def get_gateway_url(value):
 @register.filter()
 def get_user_image(value):
     user = json.loads(value)
-    return user['avatarUrl']
+    return user.get('avatarUrl', 'https://cdn-icons-png.flaticon.com/512/666/666201.png')
+
+@register.filter()
+def is_user_image(value):
+    user = json.loads(value)
+    if user.get('avatarUrl', None):
+        return True 
+    return False
 
 @register.filter()
 def tag_value(value):
