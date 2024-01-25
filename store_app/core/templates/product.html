@@ -9,18 +9,20 @@
   background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 1)),url('{{ product.external_args.background_image }}');"
 >
   <div class="flex flex-col lg:flex-row">
-    <div class="w-full lg:w-2/3 mx-2">
+    <div class="w-full lg:w-2/3 mx-2 mt-5">
       <h1 class="text-center text-amber-600 text-3xl font-bold">
         {{product.title}}
       </h1>
 
-      <div class="flex flex-col my-3">
-        <p class="text-gray-600 font-bold">About</p>
-        <div class="text-warning"> {{ product.description|linebreaksbr|safe }}</div>
+      <div class="grid grid-cols-1 gap-4 mx-10">
+        <div class="flex flex-col my-3">
+          <p class="text-gray-600 font-bold">About</p>
+          <div class="text-warning"> {{ product.description|linebreaksbr|safe }}</div>
+        </div>
       </div>
 
 
-      <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div class="grid grid-cols-1 gap-6 mx-2 md:grid-cols-2 md:mx-1">
         {% comment %} Platforms {% endcomment %}
         <div class="flex flex-col my-3">
         <p class="text-gray-600 font-bold">Platforms</p>
@@ -92,7 +94,7 @@
 
       </div>
 
-      <div class="grid grid-cols-1 gap-4">
+      <div class="grid grid-cols-1 gap-4 mx-2">
         {% comment %} Tags {% endcomment %}
         <div class="flex flex-col my-3">
           <p class="text-gray-600 font-bold">Tags</p>
@@ -119,9 +121,9 @@
       <div class="grid grid-cols-1 gap-6 mx-2 mb-5">
         {% video product.external_args.youtube_trailer.url '640x360'%}
       </div>
-      <div class="grid grid-cols-1 gap-6 mx-2 sm:grid-cols-2 sm:mx-1">
+      <div class="grid grid-cols-1 gap-6 mx-5 sm:grid-cols-2 sm:mx-1">
         {% for product_image in product_images %}
-          <img src={{product_image.image}} alt={{product_image.image}} class="cursor-pointer" onclick="toggleFullScreen(this)" />
+          <img src={{product_image.image}} alt={{product_image.image}} class="cursor-pointer transition ease-in-out delay-300 hover:scale-105" onclick="toggleFullScreen(this)" />
         {% endfor %}
       </div>
     </div>
