@@ -16,17 +16,19 @@ from store_app.tools.helpers import *
 def getUserToken(request):
     cookies_obj = {}
     cookies_str : str = request.headers.get('Cookie', None)
-    cookies_list = cookies_str.split(";")
-    for cookie in cookies_list:
-        key = cookie.split("=")[0].strip()
-        try:
-            import ast
-            value = ast.literal_eval(cookie.split("=")[1].strip())
-            value = json.loads(value)
-        except :
-            value = cookie.split("=")[1].strip()
-        cookies_obj[f'{key}'] = value
-    return cookies_obj
+    if cookies_str :
+        cookies_list = cookies_str.split(";")
+        for cookie in cookies_list:
+            key = cookie.split("=")[0].strip()
+            try:
+                import ast
+                value = ast.literal_eval(cookie.split("=")[1].strip())
+                value = json.loads(value)
+            except :
+                value = cookie.split("=")[1].strip()
+            cookies_obj[f'{key}'] = value
+        return cookies_obj
+    return None
 
 
 
@@ -113,7 +115,7 @@ def home_page(request):
 def login_page(request):
     # If token in cookies redirect home
     cookies = getUserToken(request)
-    if cookies.get('token', None):
+    if cookies and cookies.get('token', None):
         response = HttpResponseRedirect('/')
         return response
     
@@ -148,7 +150,7 @@ def login_page(request):
 def register_page(request):
     # If token in cookies redirect home
     cookies = getUserToken(request)
-    if cookies.get('token', None):
+    if cookies and cookies.get('token', None):
         response = HttpResponseRedirect('/')
         return response
     
