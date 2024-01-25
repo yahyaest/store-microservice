@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'django_filters',
     'multiselectfield',
     'django_htmx',
+    'embed_video',
     'store_app.core',
     'store_app.api'
 ]
