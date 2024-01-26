@@ -217,6 +217,10 @@ def products_page(request):
     return render(request=request, template_name='products.html',context={'products': products})
 
 def product_page(request, slug):
+    user =  None
+    cookies = getUserToken(request)
+    if cookies and cookies.get('user', None):
+        user = cookies.get('user', None)
     product = get_object_or_404(Product, slug=slug)
     product_tags = product.tags.all
     product_images = ProductImage.objects.filter(product_id=product.pk)
@@ -228,6 +232,7 @@ def product_page(request, slug):
         request=request, 
         template_name='product.html',
         context={
+            'user': user,
             'product': product, 
             'product_tags': product_tags, 
             'product_images': product_images,
