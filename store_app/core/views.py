@@ -218,6 +218,7 @@ def products_page(request):
 
 def product_page(request, slug):
     user =  None
+    is_user_product_review = False
     cookies = getUserToken(request)
     if cookies and cookies.get('user', None):
         user = cookies.get('user', None)
@@ -225,6 +226,12 @@ def product_page(request, slug):
     product_tags = product.tags.all
     product_images = ProductImage.objects.filter(product_id=product.pk)
     product_reviews = Review.objects.filter(product_id=product.pk)
+
+    if user:
+        user_product_review = Review.objects.filter(product_id=product.pk, customer_email= user['email'])
+        if len(user_product_review) > 0:
+            is_user_product_review = True
+
     product_average_rating = product_reviews.aggregate(avg_rating=Avg('rating'))['avg_rating']
     product_average_rating = round(product_average_rating, 1) if product_average_rating else None
     gateway_base_url = settings.GATEWAY_BASE_URL
@@ -233,6 +240,7 @@ def product_page(request, slug):
         template_name='product.html',
         context={
             'user': user,
+            'is_user_product_review': is_user_product_review,
             'product': product, 
             'product_tags': product_tags, 
             'product_images': product_images,

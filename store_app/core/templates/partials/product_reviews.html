@@ -1,4 +1,5 @@
 <div id="reviews">
+{% if not is_user_product_review %}
  <div class="my-3">
    <h1 class="text-red-800 text-xl font-bold"> Add Your Review</h1>
    <div class="rating">
@@ -12,15 +13,17 @@
    <textarea class="textarea textarea-primary my-5 w-full" placeholder="Enter your game review"
      {% comment %} onChange={(e) => setComment(e.currentTarget.value)} {% endcomment %}
    ></textarea>
-   <button class="btn">
-     <span class="loading loading-spinner"></span>
-     loading
-   </button>
    <button class="btn btn-info"
      {% comment %} isDisabled={!Boolean(rating && comment)} {% endcomment %}
      {% comment %} onClick={() => handleReview()} {% endcomment %}
    >Send</button>
+   <button class="btn invisible">
+     <span class="loading loading-spinner"></span>
+     loading
+   </button>
  </div>
+ {% endif %}
+
  <div>
    {% if product_reviews|length > 0 %}
      <h1 class="text-red-800 text-xl font-bold">
