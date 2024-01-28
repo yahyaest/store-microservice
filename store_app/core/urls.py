@@ -1,6 +1,6 @@
 from django.urls import path, include
 
-from store_app.core.views import home_page, htmx_http, htmx_page, login_page, product_page, products_page, logout_view, register_page
+from store_app.core.views import home_page, htmx_http, htmx_page, login_page, product_page, products_page, logout_view, register_page, submit_product_review
 
 urlpatterns = [
     path('', home_page, name='home'),
@@ -10,5 +10,6 @@ urlpatterns = [
     path('register', register_page, name='register'),
     path('logout', logout_view, name='logout'),
     path('products', products_page, name='products'),
-    path('product/<slug:slug>/', product_page, name='product')
+    path('product/<slug:slug>/', product_page, name='product'),
+    path('submit-review', submit_product_review, name='submit-review')
 ]

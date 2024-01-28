@@ -65,3 +65,17 @@ class RegisterForm(forms.Form):
                 self.add_error('image', 'File size exceeds the allowed limit (5 MB)')
 
         return image
+    
+class ReviewForm(forms.Form):
+    comment = forms.CharField(
+        label="Comment",
+        widget=forms.Textarea(attrs={"class": "textarea textarea-primary my-5 w-full", "placeholder": "Enter your game review", "rows": "2", "required": True}),
+    )
+    # rating = forms.IntegerField(
+    #     min_value=1,
+    #     max_value=5, 
+    #     widget=forms.RadioSelect(
+    #         choices=[(1, ''), (2, ''), (3, ''), (4, ''), (5, '')], 
+    #         attrs={"class": "mask mask-star-2 bg-teal-500 review-star-rating", "name": "rating"}
+    #         )
+    # )

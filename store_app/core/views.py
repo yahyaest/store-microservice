@@ -2,13 +2,14 @@ import json
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Avg
 from django.middleware.csrf import get_token
+from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django import forms
 from django.http import HttpResponse, HttpResponseRedirect
 from django_htmx.http import HttpResponseClientRedirect, HttpResponseClientRefresh, HttpResponseLocation, HttpResponseStopPolling, push_url, reswap, retarget, trigger_client_event
 from store_app.clients.gateway import Gateway
 from store_app import settings
-from store_app.core.forms import HtmxForm, LoginForm, RegisterForm
+from store_app.core.forms import HtmxForm, LoginForm, RegisterForm, ReviewForm
 from store_app.api.models import Product, ProductImage, Review
 from store_app.tools.helpers import *
 
@@ -239,13 +240,52 @@ def product_page(request, slug):
         request=request, 
         template_name='product.html',
         context={
+            'gateway_base_url':gateway_base_url,
             'user': user,
             'is_user_product_review': is_user_product_review,
             'product': product, 
             'product_tags': product_tags, 
             'product_images': product_images,
-            'product_reviews': product_reviews,
-            'product_average_rating': product_average_rating,
-            'gateway_base_url':gateway_base_url
+            'product_reviews': product_reviews if product_reviews else [],
+            'product_average_rating': product_average_rating if product_average_rating else 0,
+            'review_form': ReviewForm()
             }
         )
+
+@require_POST
+def submit_product_review(request):
+    gateway_base_url = settings.GATEWAY_BASE_URL
+    user =  None
+    cookies = getUserToken(request)
+    if cookies and cookies.get('user', None):
+        user = cookies.get('user', None)
+
+    if user:
+        rating = int(request.POST.get('rating', 1))
+        product_id = int(request.POST.get('product-id', 0))
+
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            review = Review.objects.create(
+                    customer_email=user['email'],
+                    customer_image=user['avatarUrl'],
+                    customer_name=user['username'],
+                    comment=form.cleaned_data['comment'],
+                    rating=rating,
+                    product_id=product_id
+                )
+
+            return render(
+                request=request,
+                template_name='partials/product_reviews.html#reviewform-partial', 
+                context = {
+                    'user': user,
+                    'review': review,
+                    'form': form,
+                    'gateway_base_url': gateway_base_url
+                    }
+                )
+        else:
+            return HttpResponseRedirect('/')
+    else:
+        return HttpResponseRedirect('/')

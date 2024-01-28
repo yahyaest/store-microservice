@@ -24,7 +24,10 @@
       crossorigin="anonymous"
       ></script>
   </head>
-  <body hx-on="htmx-added: document.body.style.backgroundColor = '#aaa';">
+  <body 
+    hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' 
+    hx-on="htmx-added: document.body.style.backgroundColor = '#aaa';"
+  >
 
 
     <nav class="navbar bg-error">
