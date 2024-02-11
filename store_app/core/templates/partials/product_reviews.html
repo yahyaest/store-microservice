@@ -79,7 +79,9 @@
           <div class="flex items-center">
             {% for i in "12345" %}
               <svg 
-                class="w-4 h-4 text-yellow-300 ms-1 {% if i|add:0 > review.rating %}text-gray-300 dark:text-gray-500{% endif %}" 
+                class="w-4 h-4 ms-1 
+                {% if i|add:0 <= review.rating %}text-yellow-300{% endif %} 
+                {% if i|add:0 > review.rating %}text-gray-500{% endif %}" 
                 aria-hidden="true" 
                 xmlns="http://www.w3.org/2000/svg" 
                 fill="currentColor" 

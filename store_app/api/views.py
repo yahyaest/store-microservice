@@ -17,7 +17,7 @@ from .serializer import AddCartItemSerializer, CartItemSerializer, CartSerialize
 # Create your views here.
 
 class ProductViewSet(ModelViewSet):
-    queryset = Product.objects.prefetch_related('images').all()
+    queryset = Product.objects.prefetch_related('images', 'tags').all()
     serializer_class = ProductSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = ProductFilter
@@ -38,6 +38,16 @@ class ProductViewSet(ModelViewSet):
     #     queryset = self.filter_queryset(self.get_queryset())
     #     serializer = self.get_serializer(queryset, many=True)
     #     return Response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+
+        # Include tags in the response
+        response_data = serializer.data
+        response_data['tags'] = [tag.label for tag in instance.tags.all()]
+
+        return Response(response_data)
 
     def get_serializer_context(self):
         return {'request': self.request}
