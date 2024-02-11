@@ -43,10 +43,10 @@ class ProductViewSet(ModelViewSet):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
 
-        # Include tags in the response
+        # Include tags and promotions in the response
         response_data = serializer.data
         response_data['tags'] = [tag.label for tag in instance.tags.all()]
-
+        response_data['promotions'] = [{"discount" : promotion.discount, "expire_at" : promotion.expire_at } for promotion in instance.promotions.all()]
         return Response(response_data)
 
     def get_serializer_context(self):
