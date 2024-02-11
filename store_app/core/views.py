@@ -4,6 +4,7 @@ from django.db.models import Avg
 from django.middleware.csrf import get_token
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
+from django.core.paginator import Paginator
 from django import forms
 from django.http import HttpResponse, HttpResponseRedirect
 from django_htmx.http import HttpResponseClientRedirect, HttpResponseClientRefresh, HttpResponseLocation, HttpResponseStopPolling, push_url, reswap, retarget, trigger_client_event
@@ -214,8 +215,14 @@ def logout_view(request):
     return response
 
 def products_page(request):
-    products = Product.objects.all()
-    return render(request=request, template_name='products.html',context={'products': products})
+    products_list = Product.objects.all()
+    pages = len(products_list) // 20 + 1
+    page_range = list(range(1, pages + 1))
+    paginator = Paginator(products_list, 20)
+
+    page_number = request.GET.get('page')
+    products = paginator.get_page(page_number)
+    return render(request=request, template_name='products.html',context={'products': products, 'page_range': page_range, 'current_page': int(page_number)})
 
 def product_page(request, slug):
     user =  None

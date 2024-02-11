@@ -2,11 +2,17 @@
 {% block title %}Products{% endblock %}
 
 {% block content %}
-<div class="mx-auto md:p-16">
+<div class="text-center mx-auto md:p-16">
     <div class="flex flex-wrap justify-center">
         {% for product in products %} 
             {% include 'partials/product_card.html' %} 
         {%endfor %}
+    </div>
+    {% comment %} Pagination {% endcomment %}
+    <div class="join my-5">
+        {% for i in page_range %} 
+            <input class="join-item btn btn-square" type="radio" name="options" aria-label="{{i}}" onclick="location.href='?page={{ i }}';" {% if i == current_page %}checked{% endif %} />
+        {% endfor %}
     </div>
 </div>
 {% endblock %}
