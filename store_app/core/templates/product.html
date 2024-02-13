@@ -121,6 +121,8 @@
       <div class="grid grid-cols-1 gap-6 mx-2 mb-5">
         {% video product.external_args.youtube_trailer.url '640x360'%}
       </div>
+      {% comment %} Store Section {% endcomment %}
+      {% include 'partials/product_store.html' %}
       <div class="grid grid-cols-1 gap-6 mx-5 sm:grid-cols-2 sm:mx-1">
         {% for product_image in product_images %}
           <img src={{product_image.image}} alt={{product_image.image}} class="cursor-pointer transition ease-in-out delay-300 hover:scale-105" onclick="toggleFullScreen(this)" />

@@ -42,3 +42,7 @@ def tag_value(value):
         file.write(value)
     return value
 
+@register.filter()
+def promotion_expiration_date(value):
+    value = value.strftime("%Y-%m-%d %H:%M:%S").split(" ")[0]
+    return value

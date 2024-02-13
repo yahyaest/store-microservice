@@ -13,7 +13,8 @@ from store_app import settings
 from store_app.core.forms import HtmxForm, LoginForm, RegisterForm, ReviewForm
 from store_app.api.models import Product, ProductImage, Review
 from store_app.tools.helpers import *
-
+from datetime import datetime
+import pytz
 
 def getUserToken(request):
     cookies_obj = {}
@@ -32,6 +33,15 @@ def getUserToken(request):
         return cookies_obj
     return None
 
+
+def is_promotion_not_expired(game_promotion_expiration_date: str) -> bool:
+    current_date = datetime.now(pytz.UTC)
+    date1 = current_date
+    date2 = game_promotion_expiration_date
+
+    if date1 < date2:
+        return True
+    return False
 
 
 # Create your views here.
@@ -220,7 +230,8 @@ def products_page(request):
     page_range = list(range(1, pages + 1))
     paginator = Paginator(products_list, 20)
 
-    page_number = request.GET.get('page')
+    page_number = request.GET.get('page') if request.GET.get('page') else 1
+    logger.info(f"page_number is : {page_number}")
     products = paginator.get_page(page_number)
     return render(request=request, template_name='products.html',context={'products': products, 'page_range': page_range, 'current_page': int(page_number)})
 
@@ -231,9 +242,12 @@ def product_page(request, slug):
     if cookies and cookies.get('user', None):
         user = cookies.get('user', None)
     product = get_object_or_404(Product, slug=slug)
-    product_tags = product.tags.all
+    product_tags = product.tags.all()
     product_images = ProductImage.objects.filter(product_id=product.pk)
     product_reviews = Review.objects.filter(product_id=product.pk)
+    product_promotions = product.promotions.all()
+    is_promotion_valid = len(product_promotions) > 0 and is_promotion_not_expired(product_promotions[0].expire_at)
+    product_price_after_discount = product.price - (product.price * product_promotions[0].discount) / 100 if is_promotion_valid else product.price
 
     if user:
         user_product_review = Review.objects.filter(product_id=product.pk, customer_email= user['email'])
@@ -253,6 +267,10 @@ def product_page(request, slug):
             'product': product, 
             'product_tags': product_tags, 
             'product_images': product_images,
+            'product_promotions': product_promotions,
+            'is_promotion_valid': is_promotion_valid,
+            'product_price_after_discount': product_price_after_discount,
+            'product_inventory' : product.inventory,
             'product_reviews': product_reviews if product_reviews else [],
             'product_average_rating': product_average_rating if product_average_rating else 0,
             'review_form': ReviewForm()
