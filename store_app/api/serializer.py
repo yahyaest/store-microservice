@@ -1,4 +1,6 @@
 from rest_framework import serializers
+import datetime
+import pytz
 from .models import Cart, CartItem, Collection, Order, OrderItem, Payment, Product, ProductImage, Promotion, Review, Shipping, Tag
 from django.db import transaction
 from .signals import order_created
@@ -114,25 +116,46 @@ class SimpleProductSerializer(serializers.ModelSerializer):
 class CartItemSerializer(serializers.ModelSerializer):
     product = SimpleProductSerializer()
     total_price = serializers.SerializerMethodField()
+    total_price_after_discount = serializers.SerializerMethodField()
+
+    def get_total_price_after_discount(self, cart_item: CartItem):
+        product_promotions = cart_item.product.promotions.all()
+        promotion_expiration_date = product_promotions[0].expire_at if product_promotions else None
+        if promotion_expiration_date and promotion_expiration_date > datetime.datetime.now(pytz.timezone('UTC')):
+            return cart_item.quantity * cart_item.product.price * (1 - product_promotions[0].discount/100)
+        else:
+            return cart_item.quantity * cart_item.product.price
 
     def get_total_price(self, cart_item: CartItem):
         return cart_item.quantity * cart_item.product.price
 
     class Meta:
         model = CartItem
-        fields = ['id', 'created_at', 'product', 'quantity', 'total_price']
+        fields = ['id', 'created_at', 'product', 'quantity', 'total_price', 'total_price_after_discount']
 
 class CartSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
     items = CartItemSerializer(many=True, read_only=True)
     total_price = serializers.SerializerMethodField()
+    total_price_after_discount = serializers.SerializerMethodField()
+
+    def get_total_price_after_discount(self, cart):
+        total_price = 0
+        for item in cart.items.all():
+            product_promotions = item.product.promotions.all()
+            promotion_expiration_date = product_promotions[0].expire_at if product_promotions else None
+            if promotion_expiration_date and promotion_expiration_date > datetime.datetime.now(pytz.timezone('UTC')):
+                total_price = total_price + item.quantity * item.product.price * (1 - product_promotions[0].discount/100)
+            else:
+                total_price = total_price + item.quantity * item.product.price
+        return total_price
 
     def get_total_price(self, cart):
         return sum([item.quantity * item.product.price for item in cart.items.all()])
 
     class Meta:
         model = Cart
-        fields = ['id', 'created_at', 'last_update', 'customer_name', 'customer_email', 'items', 'total_price']
+        fields = ['id', 'created_at', 'last_update', 'items', 'total_price', 'total_price_after_discount']
 
 class AddCartItemSerializer(serializers.ModelSerializer):
     product_id = serializers.IntegerField()

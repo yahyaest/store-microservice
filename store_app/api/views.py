@@ -104,10 +104,17 @@ class ReviewViewSet(ModelViewSet):
 class CartViewSet(ModelViewSet):
     queryset = Cart.objects.prefetch_related('items__product').all()
     serializer_class = CartSerializer
+    permission_classes = []
 
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        if response.status_code == 201:
+            response.set_cookie('cart_id', response.data['id'], httponly=True, secure=True)
+        return response
 
 class CartItemViewSet(ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
+    permission_classes = []
 
     def get_serializer_class(self):
         if self.request.method == 'POST':

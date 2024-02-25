@@ -111,8 +111,6 @@ class Cart(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4)
     created_at = models.DateTimeField(auto_now_add=True)
     last_update = models.DateTimeField(auto_now=True)
-    customer_name =  models.CharField(max_length=DEFAULT_VARCHAR_SIZE, null=True, blank=True)
-    customer_email =  models.EmailField(max_length=DEFAULT_VARCHAR_SIZE, null=True, blank=True)
 
 class CartItem(models.Model):
     class Meta:
