@@ -136,8 +136,12 @@ class CartItemSerializer(serializers.ModelSerializer):
 class CartSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
     items = CartItemSerializer(many=True, read_only=True)
+    items_count = serializers.SerializerMethodField()
     total_price = serializers.SerializerMethodField()
     total_price_after_discount = serializers.SerializerMethodField()
+
+    def get_items_count(self, cart):
+        return sum([item.quantity for item in cart.items.all()])
 
     def get_total_price_after_discount(self, cart):
         total_price = 0
@@ -155,7 +159,7 @@ class CartSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Cart
-        fields = ['id', 'created_at', 'last_update', 'items', 'total_price', 'total_price_after_discount']
+        fields = ['id', 'created_at', 'last_update', 'items', 'items_count', 'total_price', 'total_price_after_discount']
 
 class AddCartItemSerializer(serializers.ModelSerializer):
     product_id = serializers.IntegerField()
