@@ -112,7 +112,7 @@ class SimpleProductSerializer(serializers.ModelSerializer):
     background_image = serializers.CharField(source='external_args.background_image', allow_null=True, allow_blank=True)
     class Meta:
         model = Product
-        fields = ['id', 'title', 'price', 'background_image']
+        fields = ['id', 'title', 'price', 'inventory', 'background_image']
 
 class CartItemSerializer(serializers.ModelSerializer):
     product = SimpleProductSerializer()
