@@ -10,8 +10,9 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django_htmx.http import HttpResponseClientRedirect, HttpResponseClientRefresh, HttpResponseLocation, HttpResponseStopPolling, push_url, reswap, retarget, trigger_client_event
 from store_app.clients.gateway import Gateway
 from store_app import settings
-from store_app.core.forms import HtmxForm, LoginForm, RegisterForm, ReviewForm
-from store_app.api.models import Product, ProductImage, Review
+from store_app.core.forms import AddToCartForm, HtmxForm, LoginForm, RegisterForm, ReviewForm
+from store_app.api.models import Cart, CartItem, Product, ProductImage, Review
+from store_app.api.serializer import AddCartItemSerializer
 from store_app.tools.helpers import *
 from datetime import datetime
 import pytz
@@ -257,6 +258,9 @@ def product_page(request, slug):
     product_average_rating = product_reviews.aggregate(avg_rating=Avg('rating'))['avg_rating']
     product_average_rating = round(product_average_rating, 1) if product_average_rating else None
     gateway_base_url = settings.GATEWAY_BASE_URL
+    # Add to cart form
+    add_to_cart_form = AddToCartForm()
+    add_to_cart_form.fields['quantity'].widget.attrs['max'] = product.inventory
     return render(
         request=request, 
         template_name='product.html',
@@ -273,7 +277,8 @@ def product_page(request, slug):
             'product_inventory' : product.inventory,
             'product_reviews': product_reviews if product_reviews else [],
             'product_average_rating': product_average_rating if product_average_rating else 0,
-            'review_form': ReviewForm()
+            'review_form': ReviewForm(),
+            'add_to_cart_form': add_to_cart_form
             }
         )
 
@@ -314,3 +319,61 @@ def submit_product_review(request):
             return HttpResponseRedirect('/')
     else:
         return HttpResponseRedirect('/')
+
+@require_POST
+def create_or_update_cart(request):
+    gateway_base_url = settings.GATEWAY_BASE_URL
+    response = None
+    user =  None
+    cart_id = None
+    cookies = getUserToken(request)
+    if cookies:
+        user = cookies.get('user', None)
+        cart_id = cookies.get('cart_id', None)
+    
+    if not cart_id:
+        # Create a new cart
+        cart = Cart()
+        cart.save()
+        cart_id = cart.pk
+
+    logger.info(f"request.POST is : {request.POST}")
+    
+    # Add Cart Item
+    form = AddToCartForm(request.POST)
+    if form.is_valid():
+        ### Use Queryset for creating cart items => didn't work for update so we use serializer
+        # quantity = form.cleaned_data['quantity']
+        # product_id = int(request.POST.get('product_id', 0))
+        # cart_item = CartItem.objects.create(
+        #     cart_id=cart_id,
+        #     product_id=product_id,
+        #     quantity=quantity
+        # )
+
+        ### Use the AddCartItemSerializer for creating or updating cart items
+        serializer = AddCartItemSerializer(
+            data=request.POST,
+            context={'cart_id': cart_id}
+        )
+        if serializer.is_valid():
+            serializer.save()
+
+        response = render(
+            request=request,
+            template_name='product.html', 
+            context = {
+                'form': form,
+                }
+            )
+        
+        if not cookies.get('cart_id', None):
+            response.set_cookie('cart_id', cart_id, httponly=True, secure=True)
+        return response
+    else:
+        logger.error(f"Form not valid : {form.errors}")
+        return HttpResponseRedirect('/')
+    if user:
+        # Add Notification
+        return response
+        

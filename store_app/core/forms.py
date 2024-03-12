@@ -79,3 +79,17 @@ class ReviewForm(forms.Form):
     #         attrs={"class": "mask mask-star-2 bg-teal-500 review-star-rating", "name": "rating"}
     #         )
     # )
+class AddToCartForm(forms.Form):
+    quantity = forms.IntegerField(
+        label="Quantity",
+        widget=forms.NumberInput(
+            attrs={
+                "id": "quantity",
+                "class": "input input-bordered input-info w-full max-w-xs",
+                "placeholder": "Choose quantity",
+                "required": True,
+                "min": 1,  # Set the minimum value
+                # "max": 10,  # Set the maximum value dynamically from views
+            }
+        ),
+    )
