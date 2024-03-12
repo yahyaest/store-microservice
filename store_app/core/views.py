@@ -361,7 +361,7 @@ def create_or_update_cart(request):
 
         response = render(
             request=request,
-            template_name='product.html', 
+            template_name='partials/product_add_to_cart.html#cart-modal-partial',
             context = {
                 'form': form,
                 }

@@ -1,0 +1,76 @@
+{% load partials %}
+
+<button class="btn btn-info w-full my-1" onclick="my_modal.showModal()">
+ Add To Cart
+ <i class="mx-1 fa fa-cart-plus"></i>
+</button>
+<dialog id="my_modal" class="modal">
+ <form 
+ id="add-to-cart"
+ class="modal-box"
+ hx-post="{% url 'create-or-update-cart' %}" 
+ hx-on::after-request="closeModal();"
+ hx-target="#my_modal" 
+ hx-swap="afterbegin"
+ >
+   <h3 class="font-bold text-lg my-2">Add Game To Cart</h3>
+   {% csrf_token %}
+   {{add_to_cart_form.quantity}}
+   {% comment %} <input
+   id="quantity"
+   type="number" 
+   placeholder="Choose quantity" 
+     class="input input-bordered input-info w-full max-w-xs"
+     min="1"
+     max="{{product_inventory}}"
+     oninput="updatePrice()"
+   /> {% endcomment %}
+   <p class="py-4">Price : <span id="price">{{product_price_after_discount}}</span> $</p>
+   <div style="display: flex; justify-content: center; align-items: center;">
+     <div id="warning" style="display: none;" class="badge badge-error gap-2">
+       There is only {{product_inventory}} games in stock
+     </div>
+    </div>
+    <input type="hidden" id="product_id" name="product_id" value="{{product.id}}" />
+    <div class="flex flex-row justify-end w-full mt-2 px-1 space-x-2">
+     <button type="submit" class="btn btn-primary">Submit</button>
+     <button class="btn btn-error" onclick="my_modal.close()">Close</button>
+    </div>
+   </form>
+   <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+   </form>
+  </dialog>
+{% partialdef cart-modal-partial inline=True %}
+ {% comment %} This add only for htmx as target to close the dialog after request 
+ and be able to open it again and made another request {% endcomment %}
+{% endpartialdef %}
+
+{% block scripts %}
+<script>
+  document.getElementById('quantity').addEventListener('input', function() {
+    updatePrice();
+  });
+
+  function updatePrice() {
+    var inventory = {{ product_inventory }};
+    var quantity = document.getElementById('quantity').value;
+    var price = {{ product_price_after_discount }};
+    var totalPrice = quantity * price;
+    document.getElementById('price').innerHTML = totalPrice;
+
+    if (quantity > inventory) {
+      document.getElementById('warning').style.display = "block";
+    } else {
+      document.getElementById('warning').style.display = "none";
+    }
+  }
+
+  function closeModal() {
+   var closeModalForm = document.evaluate('//dialog[@id="my_modal"]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+   if (closeModalForm) {
+     closeModalForm.close();
+   }
+ }
+</script>
+{% endblock %}
