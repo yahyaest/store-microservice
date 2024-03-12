@@ -35,11 +35,13 @@ CORS_ALLOW_ALL_ORIGINS = True
 # Settings from environment
 env = environ.Env(
     DATABASE_URL=(str, 'psql://postgres:postgres@postgres:5432/store'),
-    GATEWAY_BASE_URL=(str, None)
+    GATEWAY_BASE_URL=(str, None),
+    NOTIFICATION_BASE_URL=(str, None)
 )
 
 DATABASE_URL = env('DATABASE_URL')
 GATEWAY_BASE_URL = env('GATEWAY_BASE_URL')
+NOTIFICATION_BASE_URL = env('NOTIFICATION_BASE_URL')
 
 # Application definition
 
