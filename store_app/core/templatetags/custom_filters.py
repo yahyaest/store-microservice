@@ -1,6 +1,9 @@
 import json
 from django import template
 from store_app import settings
+from store_app.api.models import Cart
+from store_app.api.serializer import CartSerializer
+from rest_framework.renderers import JSONRenderer
 
 
 register = template.Library()
@@ -50,3 +53,19 @@ def tag_value(value):
 def promotion_expiration_date(value):
     value = value.strftime("%Y-%m-%d %H:%M:%S").split(" ")[0]
     return value
+
+@register.filter()
+def get_cart_items_count(value):
+    cart = Cart.objects.get(id=value) 
+    serializer = CartSerializer(cart)
+    cart_data = JSONRenderer().render(serializer.data)
+    cart_data = json.loads(cart_data)
+    return cart_data.get("items_count", None)
+
+@register.filter()
+def get_cart_total_price(value):
+    cart = Cart.objects.get(id=value) 
+    serializer = CartSerializer(cart)
+    cart_data = JSONRenderer().render(serializer.data)
+    cart_data = json.loads(cart_data)
+    return cart_data.get("total_price_after_discount", None)

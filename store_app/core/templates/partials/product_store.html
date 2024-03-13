@@ -25,12 +25,14 @@
       </div>
     </div>
     {% endif %}
-    <div class="my-1">
-      <span class="text-md font-semibold text-orange-500 mx-1">
-        Price :
-      </span>
-      <div class="badge badge-secondary">{{product.price}} $</div>
-    </div>
+    {% if product_price_after_discount == product.price %}
+      <div class="my-1">
+        <span class="text-md font-semibold text-orange-500 mx-1">
+          Price :
+        </span>
+        <div class="badge badge-secondary">{{product.price}} $</div>
+      </div>
+    {% endif %}
     <div class="my-1">
       <span class="text-md font-semibold text-orange-500 mx-1">
         Inventory :

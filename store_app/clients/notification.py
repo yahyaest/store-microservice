@@ -21,7 +21,7 @@ class Notification:
             headers['Authorization'] = f'Bearer {self.token}'
 
             response = requests.post(url=self.notification_url, verify=False, json=payload, headers=headers)
-            if response.status_code == 201:
+            if response.status_code == 200:
                 notification = response.json()
                 return notification
             else:
