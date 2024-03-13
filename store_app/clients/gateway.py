@@ -10,6 +10,7 @@ class Gateway:
         self.gateway_base_url = settings.GATEWAY_BASE_URL
         self.gateway_signin_url = f'{self.gateway_base_url}/api/auth/signin/'
         self.gateway_signup_url = f'{self.gateway_base_url}/api/auth/signup/'
+        self.gateway_user_url = f'{self.gateway_base_url}/api/users/'
         self.gateway_current_user_url = f'{self.gateway_base_url}/api/users/me/'
         self.gateway_images_url = f'{self.gateway_base_url}/api/images/'
         self.gateway_current_user_image_url = f'{self.gateway_base_url}/api/images/me/'
@@ -62,6 +63,32 @@ class Gateway:
         except Exception as e:
             logger.error(f"Error logging user: {e}")
             return None,None
+
+    def get_user_by_email(self, email, use_admin_token=False, admin_credentials=None):
+        try:
+            if use_admin_token and admin_credentials:
+                logger.info("Using admin token to get user data")
+                self.login(admin_credentials) # set the token to the admin token
+            if not self.token:
+                raise ValueError(f"No token was provided. Failed to get user {email} data")
+            
+            headers = {}
+            headers['Content-Type'] = 'application/json'
+            headers['Authorization'] = f'Bearer {self.token}'
+            current_user_url = f"{self.gateway_user_url}/?email={email}"
+
+            r = requests.get(current_user_url, headers=headers)
+            if r.status_code == 200:
+                user = r.json()
+                return user
+            else:
+                logger.error(f"=====> getting user {email} data failed --> failed")
+                logger.error(r.status_code)
+                logger.error(r.text)
+            return None
+
+        except Exception as error:
+            logger.info(f"Error getting user {email} daata: {error}")
 
     def get_current_user(self):
         try:
