@@ -21,6 +21,10 @@ def list_to_string(value):
     return ', '.join(value)
 
 @register.filter()
+def list_length(value):
+    return len(value)
+
+@register.filter()
 def get_gateway_url(value):
     return settings.GATEWAY_BASE_URL
 

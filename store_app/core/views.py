@@ -1,4 +1,6 @@
 import json
+from datetime import datetime
+import pytz
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Avg
 from django.middleware.csrf import get_token
@@ -7,16 +9,15 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.paginator import Paginator
 from django import forms
 from django.http import HttpResponse, HttpResponseRedirect
+from rest_framework.renderers import JSONRenderer
 from django_htmx.http import HttpResponseClientRedirect, HttpResponseClientRefresh, HttpResponseLocation, HttpResponseStopPolling, push_url, reswap, retarget, trigger_client_event
 from store_app.clients.gateway import Gateway
 from store_app.clients.notification import Notification
 from store_app import settings
 from store_app.core.forms import AddToCartForm, HtmxForm, LoginForm, RegisterForm, ReviewForm
 from store_app.api.models import Cart, CartItem, Product, ProductImage, Review
-from store_app.api.serializer import AddCartItemSerializer
+from store_app.api.serializer import AddCartItemSerializer, CartSerializer
 from store_app.tools.helpers import *
-from datetime import datetime
-import pytz
 
 def getUserToken(request):
     cookies_obj = {}
@@ -280,6 +281,29 @@ def product_page(request, slug):
             'product_average_rating': product_average_rating if product_average_rating else 0,
             'review_form': ReviewForm(),
             'add_to_cart_form': add_to_cart_form
+            }
+        )
+
+def cart_page(request):
+    cart_id = None
+    cookies = getUserToken(request)
+    if cookies and cookies.get('user', None):
+        cart_id = cookies.get('cart_id', None)
+    
+    cart = Cart.objects.get(id=cart_id) 
+    serializer = CartSerializer(cart)
+    cart_data = JSONRenderer().render(serializer.data)
+    cart_data = json.loads(cart_data)
+
+    
+    logger.info(f"cart_items are : {json.dumps(cart_data, indent=4)}")
+
+    return render(
+        request=request, 
+        template_name='cart.html', 
+        context={
+            "cart_id": cart_id,
+            "cart": cart_data,
             }
         )
 
