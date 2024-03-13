@@ -9,6 +9,7 @@ from django import forms
 from django.http import HttpResponse, HttpResponseRedirect
 from django_htmx.http import HttpResponseClientRedirect, HttpResponseClientRefresh, HttpResponseLocation, HttpResponseStopPolling, push_url, reswap, retarget, trigger_client_event
 from store_app.clients.gateway import Gateway
+from store_app.clients.notification import Notification
 from store_app import settings
 from store_app.core.forms import AddToCartForm, HtmxForm, LoginForm, RegisterForm, ReviewForm
 from store_app.api.models import Cart, CartItem, Product, ProductImage, Review
@@ -322,12 +323,13 @@ def submit_product_review(request):
 
 @require_POST
 def create_or_update_cart(request):
-    gateway_base_url = settings.GATEWAY_BASE_URL
     response = None
+    token = None
     user =  None
     cart_id = None
     cookies = getUserToken(request)
     if cookies:
+        token=cookies.get('token', None)
         user = cookies.get('user', None)
         cart_id = cookies.get('cart_id', None)
     
@@ -336,13 +338,11 @@ def create_or_update_cart(request):
         cart = Cart()
         cart.save()
         cart_id = cart.pk
-
-    logger.info(f"request.POST is : {request.POST}")
     
     # Add Cart Item
     form = AddToCartForm(request.POST)
     if form.is_valid():
-        ### Use Queryset for creating cart items => didn't work for update so we use serializer
+        ### Use Queryset for creating cart items => didn't work for cart update so we use serializer
         # quantity = form.cleaned_data['quantity']
         # product_id = int(request.POST.get('product_id', 0))
         # cart_item = CartItem.objects.create(
@@ -358,6 +358,31 @@ def create_or_update_cart(request):
         )
         if serializer.is_valid():
             serializer.save()
+        
+        # Add Notification
+        if user and token:
+            try:
+                notification = Notification()
+                notification.token = token
+
+                quantity = form.cleaned_data['quantity']
+                product_id = int(request.POST.get('product_id', 0))
+                product = Product.objects.get(pk=product_id)
+                cart_items = CartItem.objects.filter(cart_id=cart_id)
+                logger.info(f"Create notification for user : {user['email']} for cart with id {cart_id} with {cart_items.count()} items")
+
+                notification_payload = {
+                    "message": f"Adding {quantity} {product.title} {'games' if quantity > 1 else 'game'} to cart",
+                    "sender": user.get('email', None),
+                    "title": "Cart Updated" if cart_items.count() > 1 else "Cart Created",
+                    "userId": user.get('id', None),
+                    "username": user.get('username', None),
+                    "userEmail": user.get('email', None),
+                    "userImage": user.get('avatarUrl', None),
+                }
+                notification.add_user_notification(payload=notification_payload)
+            except Exception as error:
+                logger.error(f"Failed to post notification : {error}")
 
         response = render(
             request=request,
@@ -373,7 +398,4 @@ def create_or_update_cart(request):
     else:
         logger.error(f"Form not valid : {form.errors}")
         return HttpResponseRedirect('/')
-    if user:
-        # Add Notification
-        return response
         
