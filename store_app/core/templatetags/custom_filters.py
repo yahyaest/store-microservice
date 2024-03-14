@@ -55,17 +55,27 @@ def promotion_expiration_date(value):
     return value
 
 @register.filter()
+def round_number(value, digit):
+    return round(value, digit)
+
+@register.filter()
 def get_cart_items_count(value):
-    cart = Cart.objects.get(id=value) 
-    serializer = CartSerializer(cart)
-    cart_data = JSONRenderer().render(serializer.data)
-    cart_data = json.loads(cart_data)
-    return cart_data.get("items_count", None)
+    try:
+        cart = Cart.objects.get(id=value) 
+        serializer = CartSerializer(cart)
+        cart_data = JSONRenderer().render(serializer.data)
+        cart_data = json.loads(cart_data)
+        return cart_data.get("items_count", None)
+    except:
+        return 0
 
 @register.filter()
 def get_cart_total_price(value):
-    cart = Cart.objects.get(id=value) 
-    serializer = CartSerializer(cart)
-    cart_data = JSONRenderer().render(serializer.data)
-    cart_data = json.loads(cart_data)
-    return cart_data.get("total_price_after_discount", None)
+    try:
+        cart = Cart.objects.get(id=value) 
+        serializer = CartSerializer(cart)
+        cart_data = JSONRenderer().render(serializer.data)
+        cart_data = json.loads(cart_data)
+        return cart_data.get("total_price_after_discount", None)
+    except:
+        return 0

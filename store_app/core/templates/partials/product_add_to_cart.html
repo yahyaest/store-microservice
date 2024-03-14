@@ -80,18 +80,5 @@ and made another request {% endcomment %}
       closeModalForm.close();
     }
   }
-
-  function updateCartNavbarInfo(){
-    var cartItemsCountElement = document.getElementById('cart-count');
-    var cartTotalPriceElement = document.getElementById('cart-value');
-    if (cartItemsCountElement && cartTotalPriceElement) {
-      var quantity = +document.getElementById('quantity').value;
-      var price = +document.getElementById('price').innerHTML
-      var cartItemsCount = +cartItemsCountElement.innerHTML + quantity;
-      var cartTotalPrice = +cartTotalPriceElement.innerHTML + price;
-      cartItemsCountElement.innerHTML = cartItemsCount;
-      cartTotalPriceElement.innerHTML = cartTotalPrice;
-    }
-  }
 </script>
 {% endblock %}

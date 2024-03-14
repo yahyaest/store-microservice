@@ -3,58 +3,63 @@
 {% block title%}Cart{% endblock %} 
 {%block content %}
 <div class="text-center mx-auto md:p-16">
- {% if cart_id and cart and cart.items|list_length > 0 %}
-   <h1 class="text-center text-error text-3xl font-bold my-5">Cart with {{cart.items_count}} Games</h1>
-   <table class="table">
-     <thead>
-       <tr>
-         <th></th>
-         <th>Name</th>
-         <th>Unit Price</th>
-         <th>Quantity</th>
-         <th>Total Price</th>
-         <th>Total Price After Discount</th>
-         <th></th>
-       </tr>
-     </thead>
-     <tbody>
+  {% if cart_id and cart and cart.items|list_length > 0 %}
+    <h1 class="text-center text-error text-3xl font-bold my-5">Cart with {{cart.items_count}} Games</h1>
+    <table class="table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Name</th>
+          <th>Unit Price</th>
+          <th>Quantity</th>
+          <th>Total Price</th>
+          <th>Total Price After Discount</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
       {% for item in cart.items %}
-       <tr>
-         <th>
-           <label>
-             <input type="checkbox" class="checkbox" />
-           </label>
-         </th>
-         <td>
-           <div class="flex items-center gap-3">
-             <div class="avatar">
-               <div class="mask mask-squircle w-12 h-12">
-                 <img src={{item.product.background_image}} alt={{item.product.title}}/>
-               </div>
-             </div>
-             <div>
-               <div class="font-bold">{{item.product.title}}</div>
-             </div>
-           </div>
-         </td>
-         <td>{{item.product.price}} $</td>
-         <td>{{item.quantity}}</td>
-         <td>{{item.total_price}} $</td>
-         <td>{{item.total_price_after_discount}} $</td>
-         <th>
-           <button class="btn btn-warning btn-xs">Edit</button>
-         </th>
-       </tr>
+        <tr>
+          <th>
+            <label>
+              <input type="checkbox" class="checkbox" />
+            </label>
+          </th>
+          <td>
+            <div class="flex items-center gap-3">
+              <div class="avatar">
+                <div class="mask mask-squircle w-12 h-12">
+                  <img src={{item.product.background_image}} alt={{item.product.title}}/>
+                </div>
+              </div>
+              <div>
+                <div class="font-bold">{{item.product.title}}</div>
+              </div>
+            </div>
+          </td>
+          <td>{{item.product.price}} $</td>
+          <td>{{item.quantity}}</td>
+          <td>{{item.total_price}} $</td>
+          <td>{{item.total_price_after_discount|round_number:1}} $</td>
+          <th>
+            <button class="btn btn-warning btn-xs">Edit</button>
+          </th>
+        </tr>
       {% endfor %}
-     </tbody>
-   </table>
-   <div class="flex flex-row space-x-2 my-5">
-     <div class="badge badge-primary">Total Price : {{cart.total_price}} $</div>
-     <div class="badge badge-secondary">Total Price After Discount : {{cart.total_price_after_discount}} $</div>
-   </div>
-   <div class="flex flex-row space-x-2 my-2">
-     <button class="btn btn-success btn-sm">Submit Order</button>
-     <button class="btn btn-error btn-sm">Remove Cart</button>
+      </tbody>
+    </table>
+    <div class="flex flex-row space-x-2 my-5">
+      <div class="badge badge-primary">Total Price : {{cart.total_price}} $</div>
+      <div class="badge badge-secondary">Total Price After Discount : {{cart.total_price_after_discount|round_number:1}} $</div>
+    </div>
+    <div class="flex flex-row space-x-2 my-2">
+      <button class="btn btn-success btn-sm">Submit Order</button>
+      {% comment %} <button class="btn btn-error btn-sm">Remove Cart</button> {% endcomment %}
+      <form method="POST" action="{% url 'delete_cart' %}">
+      {% csrf_token %}
+      <input type="hidden" name="cart_id" value="{{ cart_id }}">
+      <button class="btn btn-error btn-sm" type="submit">Delete Cart </button>
+    </form>
    </div>
  {%else%}
    <h1 class="text-center text-error text-3xl font-bold my-5">Cart is empty</h1>

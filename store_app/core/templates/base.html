@@ -81,7 +81,7 @@
           >
             <div class="card-body">
               <span class="text-info text-center">Total Price: $ 
-                <span id="cart-value">{{request.COOKIES.cart_id|get_cart_total_price}}</span>
+                <span id="cart-value">{{request.COOKIES.cart_id|get_cart_total_price|round_number:1}}</span>
               </span>
               <div class="card-actions">
                 <a class="btn btn-primary btn-block btn-xs" href="{% url 'cart' %}">View cart</a>
@@ -203,6 +203,19 @@
 
       function getCSRFToken() {
         return document.getElementsByName('csrfmiddlewaretoken')[0].value;
+      }
+
+      function updateCartNavbarInfo(){
+        var cartItemsCountElement = document.getElementById('cart-count');
+        var cartTotalPriceElement = document.getElementById('cart-value');
+        if (cartItemsCountElement && cartTotalPriceElement) {
+          var quantity = +document.getElementById('quantity').value;
+          var price = +document.getElementById('price').innerHTML
+          var cartItemsCount = +cartItemsCountElement.innerHTML + quantity;
+          var cartTotalPrice = +cartTotalPriceElement.innerHTML + price;
+          cartItemsCountElement.innerHTML = cartItemsCount;
+          cartTotalPriceElement.innerHTML = cartTotalPrice;
+        }
       }
     </script>
 

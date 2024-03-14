@@ -1,4 +1,6 @@
 from django import forms
+from store_app.api.models import Cart
+from store_app.tools.helpers import *
 
 class HtmxForm(forms.Form):
     name=forms.CharField()
@@ -93,3 +95,12 @@ class AddToCartForm(forms.Form):
             }
         ),
     )
+class DeleteCartForm(forms.Form):
+    cart_id = forms.UUIDField()
+
+    def delete_cart(self):
+        try:
+            logger.info(f"Deleting cart with id: {self.cleaned_data['cart_id']}")
+            Cart.objects.get(id=str(self.cleaned_data['cart_id'])).delete()
+        except Cart.DoesNotExist:
+            logger.error(f"Cart with id: {self.cleaned_data['cart_id']} does not exist")

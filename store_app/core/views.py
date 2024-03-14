@@ -14,7 +14,7 @@ from django_htmx.http import HttpResponseClientRedirect, HttpResponseClientRefre
 from store_app.clients.gateway import Gateway
 from store_app.clients.notification import Notification
 from store_app import settings
-from store_app.core.forms import AddToCartForm, HtmxForm, LoginForm, RegisterForm, ReviewForm
+from store_app.core.forms import AddToCartForm, DeleteCartForm, HtmxForm, LoginForm, RegisterForm, ReviewForm
 from store_app.api.models import Cart, CartItem, Product, ProductImage, Review
 from store_app.api.serializer import AddCartItemSerializer, CartSerializer
 from store_app.tools.helpers import *
@@ -285,30 +285,34 @@ def product_page(request, slug):
         )
 
 def cart_page(request):
-    cart_id = None
-    cookies = getUserToken(request)
-    if cookies:
-        cart_id = cookies.get('cart_id', None)
-    
-    if not cart_id:
+    try:
+        cart_id = None
+        cookies = getUserToken(request)
+        if cookies:
+            cart_id = cookies.get('cart_id', None)
+        
+        if not cart_id:
+            return render(request=request, template_name='cart.html')
+        
+        cart = Cart.objects.get(id=cart_id) 
+        serializer = CartSerializer(cart)
+        cart_data = JSONRenderer().render(serializer.data)
+        cart_data = json.loads(cart_data)
+
+        
+        logger.info(f"cart_items are : {json.dumps(cart_data, indent=4)}")
+
+        return render(
+            request=request, 
+            template_name='cart.html', 
+            context={
+                "cart_id": cart_id,
+                "cart": cart_data,
+                }
+            )
+    except Exception as error:
+        logger.error(f"Error in cart page : {error}")
         return render(request=request, template_name='cart.html')
-    
-    cart = Cart.objects.get(id=cart_id) 
-    serializer = CartSerializer(cart)
-    cart_data = JSONRenderer().render(serializer.data)
-    cart_data = json.loads(cart_data)
-
-    
-    logger.info(f"cart_items are : {json.dumps(cart_data, indent=4)}")
-
-    return render(
-        request=request, 
-        template_name='cart.html', 
-        context={
-            "cart_id": cart_id,
-            "cart": cart_data,
-            }
-        )
 
 @require_POST
 def submit_product_review(request):
@@ -425,4 +429,15 @@ def create_or_update_cart(request):
     else:
         logger.error(f"Form not valid : {form.errors}")
         return HttpResponseRedirect('/')
-        
+
+def delete_cart(request):
+    form = DeleteCartForm(request.POST)
+    if form.is_valid():
+        logger.info(f"Deleting cart : {form.cleaned_data['cart_id']}")
+        form.delete_cart()
+        response = HttpResponseRedirect('/cart')
+        response.delete_cookie('cart_id')
+        return response
+    else:
+        logger.info(f"Deleting cart : {form.cleaned_data} failed")
+        return redirect('cart')
