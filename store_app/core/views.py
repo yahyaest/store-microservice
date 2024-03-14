@@ -287,8 +287,11 @@ def product_page(request, slug):
 def cart_page(request):
     cart_id = None
     cookies = getUserToken(request)
-    if cookies and cookies.get('user', None):
+    if cookies:
         cart_id = cookies.get('cart_id', None)
+    
+    if not cart_id:
+        return render(request=request, template_name='cart.html')
     
     cart = Cart.objects.get(id=cart_id) 
     serializer = CartSerializer(cart)
