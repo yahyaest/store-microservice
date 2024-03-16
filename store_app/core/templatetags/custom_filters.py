@@ -59,6 +59,10 @@ def round_number(value, digit):
     return round(value, digit)
 
 @register.filter()
+def division(value, value2):
+    return value/value2
+
+@register.filter()
 def get_cart_items_count(value):
     try:
         cart = Cart.objects.get(id=value) 

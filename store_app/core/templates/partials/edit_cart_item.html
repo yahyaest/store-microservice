@@ -1,0 +1,82 @@
+{% load partials %}
+{% load custom_filters %} 
+
+<button class="btn btn-warning btn-xs" onclick="my_modal1.showModal()">Edit</button>
+<dialog id="my_modal1" class="modal">
+  <form
+    id="edit-cart-item"
+    class="modal-box"
+    hx-post="{% url 'edit_cart_item' %}"
+    hx-on::after-request="closeEditModal(); reload();"
+    hx-target="#my_modal1"
+    hx-swap="afterbegin"
+  >
+    <h3 class="font-bold text-lg my-2">Edit Cart Item</h3>
+    {% csrf_token %} 
+    {{edit_cart_item_form.quantity}}
+
+    <p class="py-4">
+      Price : <span id="price">{{cart_item.total_price_after_discount}}</span> $
+    </p>
+    <div style="display: flex; justify-content: center; align-items: center">
+      <div id="warning" style="display: none" class="badge badge-error gap-2">
+        There is only {{cart_item.product.inventory}} games in stock
+      </div>
+    </div>
+    <input
+      type="hidden"
+      id="product_id"
+      name="product_id"
+      value="{{cart_item.product.id}}"
+    />
+    <div class="flex flex-row justify-end w-full mt-2 px-1 space-x-2">
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <button type="button" class="btn btn-error" onclick="my_modal1.close()">Close</button>
+    </div>
+  </form>
+  <form method="dialog" class="modal-backdrop">
+    <button>close</button>
+  </form>
+</dialog>
+{% partialdef cart-modal-partial inline=True %} 
+{% comment %} This add only for
+htmx as target to close the dialog after request and be able to open it again
+and made another request {% endcomment %} 
+{% endpartialdef %} 
+
+{% block scripts%}
+<script>
+  document.getElementById('edit-quantity').value = {{cart_item.quantity}};
+  document.getElementById('edit-quantity').max = {{cart_item.product.inventory}};
+
+  document.getElementById('edit-quantity').addEventListener('input', function() {
+    updatePrice();
+  });
+
+  function updatePrice() {
+    var inventory = {{ cart_item.product.inventory }};
+    var quantity = document.getElementById('edit-quantity').value;
+    var price = {{cart_item.total_price_after_discount}}/{{cart_item.quantity}};
+    var totalPrice = quantity * price;
+    document.getElementById('price').innerHTML = totalPrice;
+
+    if (quantity > inventory) {
+      document.getElementById('warning').style.display = "block";
+    } else {
+      document.getElementById('warning').style.display = "none";
+    }
+  }
+
+  function closeEditModal() {
+    var closeModalForm = document.evaluate('//dialog[@id="my_modal1"]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+    if (closeModalForm) {
+      closeModalForm.close();
+    }
+  }
+
+  function reload(){
+    location.reload();
+  }
+  
+</script>
+{% endblock %}

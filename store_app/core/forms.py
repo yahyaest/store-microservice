@@ -90,8 +90,23 @@ class AddToCartForm(forms.Form):
                 "class": "input input-bordered input-info w-full max-w-xs",
                 "placeholder": "Choose quantity",
                 "required": True,
-                "min": 1,  # Set the minimum value
+                "min": 1,
                 # "max": 10,  # Set the maximum value dynamically from views
+            }
+        ),
+    )
+
+class EditCartItemForm(forms.Form):
+    quantity = forms.IntegerField(
+        label="Quantity",
+        widget=forms.NumberInput(
+            attrs={
+                "id": "edit-quantity",
+                "class": "input input-bordered input-info w-full max-w-xs",
+                "placeholder": "Choose quantity",
+                "required": True,
+                "min": 1,
+                # "max": 10,  # Set the maximum value dynamically with javascript
             }
         ),
     )

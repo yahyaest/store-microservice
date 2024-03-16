@@ -41,7 +41,7 @@
     />
     <div class="flex flex-row justify-end w-full mt-2 px-1 space-x-2">
       <button type="submit" class="btn btn-primary">Submit</button>
-      <button class="btn btn-error" onclick="my_modal.close()">Close</button>
+      <button type="button" class="btn btn-error" onclick="my_modal.close()">Close</button>
     </div>
   </form>
   <form method="dialog" class="modal-backdrop">
@@ -78,6 +78,19 @@ and made another request {% endcomment %}
     var closeModalForm = document.evaluate('//dialog[@id="my_modal"]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
     if (closeModalForm) {
       closeModalForm.close();
+    }
+  }
+
+  function updateCartNavbarInfo(){
+    var cartItemsCountElement = document.getElementById('cart-count');
+    var cartTotalPriceElement = document.getElementById('cart-value');
+    if (cartItemsCountElement && cartTotalPriceElement) {
+      var quantity = +document.getElementById('quantity').value;
+      var price = +document.getElementById('price').innerHTML
+      var cartItemsCount = +cartItemsCountElement.innerHTML + quantity;
+      var cartTotalPrice = +cartTotalPriceElement.innerHTML + price;
+      cartItemsCountElement.innerHTML = cartItemsCount;
+      cartTotalPriceElement.innerHTML = cartTotalPrice;
     }
   }
 </script>

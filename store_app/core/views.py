@@ -14,7 +14,7 @@ from django_htmx.http import HttpResponseClientRedirect, HttpResponseClientRefre
 from store_app.clients.gateway import Gateway
 from store_app.clients.notification import Notification
 from store_app import settings
-from store_app.core.forms import AddToCartForm, DeleteCartForm, HtmxForm, LoginForm, RegisterForm, ReviewForm
+from store_app.core.forms import AddToCartForm, DeleteCartForm, EditCartItemForm, HtmxForm, LoginForm, RegisterForm, ReviewForm
 from store_app.api.models import Cart, CartItem, Product, ProductImage, Review
 from store_app.api.serializer import AddCartItemSerializer, CartSerializer
 from store_app.tools.helpers import *
@@ -299,6 +299,12 @@ def cart_page(request):
         cart_data = JSONRenderer().render(serializer.data)
         cart_data = json.loads(cart_data)
 
+        edit_cart_item_form = EditCartItemForm(request.POST)
+        product_id = int(request.POST.get('product_id', 0))
+        logger.info(f"product_id is : {product_id}")
+        # product = Product.objects.get(pk=product_id)
+        # edit_cart_item_form.fields['quantity'].widget.attrs['max'] = product.inventory
+        # edit_cart_item_form.fields['quantity'].widget.attrs['value'] = cart_item.quantity
         
         logger.info(f"cart_items are : {json.dumps(cart_data, indent=4)}")
 
@@ -308,6 +314,7 @@ def cart_page(request):
             context={
                 "cart_id": cart_id,
                 "cart": cart_data,
+                "edit_cart_item_form": edit_cart_item_form,
                 }
             )
     except Exception as error:
@@ -429,6 +436,43 @@ def create_or_update_cart(request):
     else:
         logger.error(f"Form not valid : {form.errors}")
         return HttpResponseRedirect('/')
+
+@require_POST
+def edit_cart_item(request):
+    cart_id = None
+    cookies = getUserToken(request)
+    if cookies:
+        cart_id = cookies.get('cart_id', None)
+    
+    if not cart_id:
+        logger.error(f"Cart not found")
+        return HttpResponseRedirect('/cart')
+        
+    product_id = int(request.POST.get('product_id', 0))
+    product = Product.objects.get(pk=product_id)
+
+    cart_item = CartItem.objects.filter(cart_id=cart_id, product_id=request.POST.get('product_id', 0))
+    cart_item = cart_item.first()
+    # Edit Cart Item
+    edit_cart_item_form = EditCartItemForm(request.POST)
+
+    if edit_cart_item_form.is_valid():
+        quantity = edit_cart_item_form.cleaned_data['quantity']
+        cart_item.quantity = quantity
+        cart_item.save()
+
+        return render(
+            request=request,
+            template_name='partials/edit_cart_item.html#cart-modal-partial',
+            context = {
+                'edit_cart_item_form': edit_cart_item_form,
+                }
+            )
+        
+    else:
+        logger.error(f"Form not valid : {edit_cart_item_form.errors}")
+        return HttpResponseRedirect('/cart')
+
 
 def delete_cart(request):
     form = DeleteCartForm(request.POST)

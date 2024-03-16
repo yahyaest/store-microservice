@@ -42,7 +42,8 @@
           <td>{{item.total_price}} $</td>
           <td>{{item.total_price_after_discount|round_number:1}} $</td>
           <th>
-            <button class="btn btn-warning btn-xs">Edit</button>
+            {% comment %} <button class="btn btn-warning btn-xs">Edit</button> {% endcomment %}
+            {% include 'partials/edit_cart_item.html' with cart_item=item %}
           </th>
         </tr>
       {% endfor %}
@@ -54,16 +55,15 @@
     </div>
     <div class="flex flex-row space-x-2 my-2">
       <button class="btn btn-success btn-sm">Submit Order</button>
-      {% comment %} <button class="btn btn-error btn-sm">Remove Cart</button> {% endcomment %}
       <form method="POST" action="{% url 'delete_cart' %}">
-      {% csrf_token %}
-      <input type="hidden" name="cart_id" value="{{ cart_id }}">
-      <button class="btn btn-error btn-sm" type="submit">Delete Cart </button>
-    </form>
-   </div>
- {%else%}
-   <h1 class="text-center text-error text-3xl font-bold my-5">Cart is empty</h1>
- {% endif %}
+        {% csrf_token %}
+        <input type="hidden" name="cart_id" value="{{ cart_id }}">
+        <button class="btn btn-error btn-sm" type="submit">Delete Cart </button>
+      </form>
+    </div>
+  {%else%}
+    <h1 class="text-center text-error text-3xl font-bold my-5">Cart is empty</h1>
+  {% endif %}
 </div>
 {% endblock %}
 
