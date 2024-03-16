@@ -22,7 +22,7 @@
         <tr>
           <th>
             <label>
-              <input type="checkbox" class="checkbox" />
+              <input id="{{item.id}}" type="checkbox" class="checkbox" />
             </label>
           </th>
           <td>
@@ -42,7 +42,6 @@
           <td>{{item.total_price}} $</td>
           <td>{{item.total_price_after_discount|round_number:1}} $</td>
           <th>
-            {% comment %} <button class="btn btn-warning btn-xs">Edit</button> {% endcomment %}
             {% include 'partials/edit_cart_item.html' with cart_item=item %}
           </th>
         </tr>
@@ -60,6 +59,11 @@
         <input type="hidden" name="cart_id" value="{{ cart_id }}">
         <button class="btn btn-error btn-sm" type="submit">Delete Cart </button>
       </form>
+      <form id="delete_cart_items_form" style="display: none" method="POST" action="{% url 'delete_selected_cart_items' %}">
+        {% csrf_token %}
+        <input type="hidden" id="selected_cart_items" name="selected_cart_items" value="{{ cart_id }}">
+        <button class="btn btn-warning btn-sm" type="submit">Delete Selected Items </button>
+      </form>
     </div>
   {%else%}
     <h1 class="text-center text-error text-3xl font-bold my-5">Cart is empty</h1>
@@ -69,5 +73,28 @@
 
 {% block scripts %}
   <script>
+    var checkboxes = document.querySelectorAll('.checkbox');
+
+    checkboxes.forEach(function(checkbox) {
+      checkbox.addEventListener('change', function() {
+        getSelectedCartItems();
+      });
+    });
+
+    function getSelectedCartItems(){
+      let selectCartItemsIds = [];
+      const checkboxes = document.querySelectorAll('.checkbox');
+      for (const checkbox of checkboxes) {
+        if (checkbox.checked) {
+          selectCartItemsIds.push(+checkbox.id);
+        }
+      }
+      document.getElementById('selected_cart_items').value = selectCartItemsIds;
+      if (selectCartItemsIds.length > 0) {
+        document.getElementById('delete_cart_items_form').style.display = "block";
+      } else {
+        document.getElementById('delete_cart_items_form').style.display = "none";
+      }
+    }
   </script>
 {% endblock %}

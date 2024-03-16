@@ -14,7 +14,7 @@ from django_htmx.http import HttpResponseClientRedirect, HttpResponseClientRefre
 from store_app.clients.gateway import Gateway
 from store_app.clients.notification import Notification
 from store_app import settings
-from store_app.core.forms import AddToCartForm, DeleteCartForm, EditCartItemForm, HtmxForm, LoginForm, RegisterForm, ReviewForm
+from store_app.core.forms import AddToCartForm, DeleteCartForm, DeleteCartItemsForm, EditCartItemForm, HtmxForm, LoginForm, RegisterForm, ReviewForm
 from store_app.api.models import Cart, CartItem, Product, ProductImage, Review
 from store_app.api.serializer import AddCartItemSerializer, CartSerializer
 from store_app.tools.helpers import *
@@ -300,13 +300,8 @@ def cart_page(request):
         cart_data = json.loads(cart_data)
 
         edit_cart_item_form = EditCartItemForm(request.POST)
-        product_id = int(request.POST.get('product_id', 0))
-        logger.info(f"product_id is : {product_id}")
-        # product = Product.objects.get(pk=product_id)
-        # edit_cart_item_form.fields['quantity'].widget.attrs['max'] = product.inventory
-        # edit_cart_item_form.fields['quantity'].widget.attrs['value'] = cart_item.quantity
         
-        logger.info(f"cart_items are : {json.dumps(cart_data, indent=4)}")
+        # logger.info(f"cart_items are : {json.dumps(cart_data, indent=4)}")
 
         return render(
             request=request, 
@@ -483,5 +478,14 @@ def delete_cart(request):
         response.delete_cookie('cart_id')
         return response
     else:
-        logger.info(f"Deleting cart : {form.cleaned_data} failed")
+        logger.info(f"Deleting cart : {form.errors} failed")
+        return redirect('cart')
+
+def delete_selected_cart_items(request):
+    form = DeleteCartItemsForm(request.POST)
+    if form.is_valid():
+        form.delete_selected_cart_items()
+        return redirect('cart')
+    else:
+        logger.info(f"Deleting cart items for cart : {form.errors} failed")
         return redirect('cart')
