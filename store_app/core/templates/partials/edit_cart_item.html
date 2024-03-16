@@ -1,25 +1,24 @@
 {% load partials %}
 {% load custom_filters %} 
 
-<button class="btn btn-warning btn-xs" onclick="my_modal1.showModal()">Edit</button>
-<dialog id="my_modal1" class="modal">
+<button id="edit-cart-item-form-{{cart_item.id}}" class="btn btn-warning btn-xs" onclick="my_modal{{cart_item.id}}.showModal()">Edit</button>
+<dialog id="my_modal{{cart_item.id}}" class="modal">
   <form
-    id="edit-cart-item"
     class="modal-box"
     hx-post="{% url 'edit_cart_item' %}"
     hx-on::after-request="closeEditModal(); reload();"
-    hx-target="#my_modal1"
+    hx-target="#my_modal{{cart_item.id}}"
     hx-swap="afterbegin"
   >
     <h3 class="font-bold text-lg my-2">Edit Cart Item</h3>
-    {% csrf_token %} 
-    {{edit_cart_item_form.quantity}}
+    {% csrf_token %}
+    <div id="cart_item_{{cart_item.id}}"> {{edit_cart_item_form.quantity}}</div>
 
     <p class="py-4">
-      Price : <span id="price">{{cart_item.total_price_after_discount}}</span> $
+      Price : <span id="{{cart_item.id}}_price">{{cart_item.total_price_after_discount}}</span> $
     </p>
     <div style="display: flex; justify-content: center; align-items: center">
-      <div id="warning" style="display: none" class="badge badge-error gap-2">
+      <div id="{{cart_item.id}}_warning" style="display: none" class="badge badge-error gap-2">
         There is only {{cart_item.product.inventory}} games in stock
       </div>
     </div>
@@ -30,8 +29,8 @@
       value="{{cart_item.product.id}}"
     />
     <div class="flex flex-row justify-end w-full mt-2 px-1 space-x-2">
-      <button type="submit" class="btn btn-primary">Submit</button>
-      <button type="button" class="btn btn-error" onclick="my_modal1.close()">Close</button>
+      <button id="{{cart_item.id}}_submit_button" type="submit" class="btn btn-primary">Submit</button>
+      <button type="button" class="btn btn-error" onclick="my_modal{{cart_item.id}}.close()">Close</button>
     </div>
   </form>
   <form method="dialog" class="modal-backdrop">
@@ -46,34 +45,60 @@ and made another request {% endcomment %}
 
 {% block scripts%}
 <script>
-  document.getElementById('edit-quantity').value = {{cart_item.quantity}};
-  document.getElementById('edit-quantity').max = {{cart_item.product.inventory}};
-
-  document.getElementById('edit-quantity').addEventListener('input', function() {
-    updatePrice();
+  var currentCartItem = null;
+  // Set Initial cartItem data in the event listener for the edit button
+  document.getElementById('edit-cart-item-form-{{cart_item.id}}').addEventListener('click', function() {
+    // Set cart item input value and max
+    var cartItemInputDiv = document.getElementById('cart_item_{{cart_item.id}}');
+    var cartItemInput = cartItemInputDiv.firstElementChild;
+    cartItemInput.value = {{cart_item.quantity}};
+    cartItemInput.max = {{cart_item.product.inventory}};
+    // Set the price of the cart item
+    document.getElementById('{{cart_item.id}}_price').innerHTML = {{cart_item.quantity}} * {{cart_item.total_price_after_discount}}/{{cart_item.quantity}};
+    // Hide the warning and enable the submit button
+    document.getElementById('{{cart_item.id}}_warning').style.display = "none";
+    document.getElementById('{{cart_item.id}}_submit_button').removeAttribute('disabled');
+    // Set the current cart item
+    currentCartItem = {{cart_item|safe}};
+  });
+  
+  document.getElementById('cart_item_{{cart_item.id}}').firstElementChild.addEventListener('input', function() {
+    updatePrice({{cart_item.id}});
   });
 
-  function updatePrice() {
-    var inventory = {{ cart_item.product.inventory }};
-    var quantity = document.getElementById('edit-quantity').value;
-    var price = {{cart_item.total_price_after_discount}}/{{cart_item.quantity}};
+  // Update the price of the cart item
+  function updatePrice(cartId) {
+    var inventory =  currentCartItem.product.inventory;
+    var quantity = document.getElementById(`cart_item_${cartId}`).firstElementChild.value;
+    var price = currentCartItem.total_price_after_discount/currentCartItem.quantity;
     var totalPrice = quantity * price;
-    document.getElementById('price').innerHTML = totalPrice;
+    document.getElementById(`${cartId}_price`).innerHTML = totalPrice;
 
+    // Disable the submit button if the quantity is more than the inventory
+    if(quantity > inventory ){
+      document.getElementById(`${cartId}_submit_button`).setAttribute('disabled', true);
+    } 
+    else {
+      document.getElementById(`${cartId}_submit_button`).removeAttribute('disabled');
+    }
+
+    // Show warning if the quantity is more than the inventory
     if (quantity > inventory) {
-      document.getElementById('warning').style.display = "block";
+      document.getElementById(`${cartId}_warning`).style.display = "block";
     } else {
-      document.getElementById('warning').style.display = "none";
+      document.getElementById(`${cartId}_warning`).style.display = "none";
     }
   }
 
+  // Close the edit modal
   function closeEditModal() {
-    var closeModalForm = document.evaluate('//dialog[@id="my_modal1"]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+    var closeModalForm = document.evaluate('//dialog[@id="my_modal{{cart_item.id}}"]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
     if (closeModalForm) {
       closeModalForm.close();
     }
   }
 
+  // Reload the page
   function reload(){
     location.reload();
   }
