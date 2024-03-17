@@ -470,12 +470,37 @@ def edit_cart_item(request):
 
 
 def delete_cart(request):
+    token = None
+    user =  None
+    cookies = getUserToken(request)
+    if cookies:
+        token=cookies.get('token', None)
+        user = cookies.get('user', None)
     form = DeleteCartForm(request.POST)
     if form.is_valid():
         logger.info(f"Deleting cart : {form.cleaned_data['cart_id']}")
         form.delete_cart()
         response = HttpResponseRedirect('/cart')
         response.delete_cookie('cart_id')
+
+        # Add Notification
+        if user and token:
+            try:
+                notification = Notification()
+                notification.token = token
+                notification_payload = {
+                    "message": "You deleted your cart",
+                    "sender": user.get('email', None),
+                    "title": "Cart Deleted",
+                    "userId": user.get('id', None),
+                    "username": user.get('username', None),
+                    "userEmail": user.get('email', None),
+                    "userImage": user.get('avatarUrl', None),
+                }
+                notification.add_user_notification(payload=notification_payload)
+            except Exception as error:
+                logger.error(f"Failed to post notification : {error}")
+
         return response
     else:
         logger.info(f"Deleting cart : {form.errors} failed")
