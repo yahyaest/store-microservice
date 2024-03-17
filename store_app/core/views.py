@@ -301,7 +301,7 @@ def cart_page(request):
 
         edit_cart_item_form = EditCartItemForm(request.POST)
         
-        # logger.info(f"cart_items are : {json.dumps(cart_data, indent=4)}")
+        logger.info(f"cart_items are : {json.dumps(cart_data, indent=4)}")
 
         return render(
             request=request, 

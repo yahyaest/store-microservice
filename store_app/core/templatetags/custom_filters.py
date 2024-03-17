@@ -1,9 +1,12 @@
 import json
+from datetime import datetime
 from django import template
+from rest_framework.renderers import JSONRenderer
 from store_app import settings
 from store_app.api.models import Cart
 from store_app.api.serializer import CartSerializer
-from rest_framework.renderers import JSONRenderer
+from store_app.clients.notification import Notification
+from store_app.tools.helpers import *
 
 
 register = template.Library()
@@ -63,6 +66,32 @@ def division(value, value2):
     return value/value2
 
 @register.filter()
+def format_relative_time(value):
+    input_date = datetime.fromisoformat(value[:-1]) if isinstance(value, str) else value
+    current_date = datetime.now()
+
+    time_difference = current_date - input_date
+    seconds_difference = int(time_difference.total_seconds())
+    minutes_difference = seconds_difference // 60
+    hours_difference = minutes_difference // 60
+    days_difference = hours_difference // 24
+    months_difference = days_difference // 30.44
+    years_difference = months_difference // 12
+
+    if years_difference > 0:
+        return f"{years_difference} year{'s' if years_difference != 1 else ''} ago"
+    elif months_difference > 0:
+        return f"{months_difference} month{'s' if months_difference != 1 else ''} ago"
+    elif days_difference > 0:
+        return f"{days_difference} day{'s' if days_difference != 1 else ''} ago"
+    elif hours_difference > 0:
+        return f"{hours_difference} hour{'s' if hours_difference != 1 else ''} ago"
+    elif minutes_difference > 0:
+        return f"{minutes_difference} minute{'s' if minutes_difference != 1 else ''} ago"
+    else:
+        return f"{seconds_difference} second{'s' if seconds_difference != 1 else ''} ago"
+
+@register.filter()
 def get_cart_items_count(value):
     try:
         cart = Cart.objects.get(id=value) 
@@ -81,5 +110,39 @@ def get_cart_total_price(value):
         cart_data = JSONRenderer().render(serializer.data)
         cart_data = json.loads(cart_data)
         return cart_data.get("total_price_after_discount", None)
+    except:
+        return 0
+
+@register.filter()
+def get_user_notifications(value, value2):
+    try:
+        token = value
+        user = value2
+        user_email = json.loads(user).get('email')
+        logger.info(f"Getting notifications for user: {user_email}")
+        notification = Notification()
+        notification.token = token
+
+        user_notifications : list = notification.get_user_notifications(email=user_email)
+        user_notifications.sort(key=lambda x: x['createdAt'], reverse=True)
+
+        return user_notifications[0:5]
+    except Exception as e:
+        logger.error(f"Error getting user notifications: {e}")
+        return []
+    
+@register.filter()
+def get_user_notifications_count(value, value2):
+    try:
+        token = value
+        user = value2
+        user_email = json.loads(user).get('email')
+        logger.info(f"Getting notifications count for user: {user_email}")
+        notification = Notification()
+        notification.token = token
+
+        user_notifications = notification.get_user_notifications(email=user_email)
+        user_notifications = [notification for notification in user_notifications if not notification.get('seen')]
+        return len(user_notifications)
     except:
         return 0
