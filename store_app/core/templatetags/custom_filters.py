@@ -35,6 +35,10 @@ def get_gateway_url(value):
     return settings.GATEWAY_BASE_URL
 
 @register.filter()
+def get_notification_url(value):
+    return settings.NOTIFICATION_BASE_URL
+
+@register.filter()
 def get_user_image(value):
     user = json.loads(value)
     return user.get('avatarUrl', 'https://cdn-icons-png.flaticon.com/512/666/666201.png')
@@ -124,6 +128,7 @@ def get_user_notifications(value, value2):
         notification.token = token
 
         user_notifications : list = notification.get_user_notifications(email=user_email)
+        user_notifications = [notification for notification in user_notifications if not notification.get('seen')]
         user_notifications.sort(key=lambda x: x['createdAt'], reverse=True)
 
         return user_notifications[0:5]
@@ -146,3 +151,34 @@ def get_user_notifications_count(value, value2):
         return len(user_notifications)
     except:
         return 0
+
+@register.filter()
+def get_user_all_notifications_count(value, value2):
+    try:
+        token = value
+        user = value2
+        user_email = json.loads(user).get('email')
+        logger.info(f"Getting notifications count for user: {user_email}")
+        notification = Notification()
+        notification.token = token
+
+        user_notifications = notification.get_user_notifications(email=user_email)
+        return len(user_notifications)
+    except:
+        return 0
+    
+@register.filter()
+def delete_notification(value, value2):
+    try:
+        token = value
+        notification_id = value2
+
+        notification = Notification()
+        notification.token = token
+
+        notification.delete_notification(notification_id=notification_id)
+
+        return None
+    except Exception as e:
+        logger.error(f"Error getting user notifications: {e}")
+        return None

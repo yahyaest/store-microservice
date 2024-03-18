@@ -24,7 +24,8 @@
       src="https://unpkg.com/htmx.org@1.9.10" 
       integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" 
       crossorigin="anonymous"
-      ></script>
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.7/dist/axios.min.js"></script>
   </head>
   <body 
     hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' 
@@ -111,13 +112,13 @@
                 >
                   <path d="M224 0c-17.7 0-32 14.3-32 32V51.2C119 66 64 130.6 64 208v18.8c0 47-17.3 92.4-48.5 127.6l-7.4 8.3c-8.4 9.4-10.4 22.9-5.3 34.4S19.4 416 32 416H416c12.6 0 24-7.4 29.2-18.9s3.1-25-5.3-34.4l-7.4-8.3C401.3 319.2 384 273.9 384 226.8V208c0-77.4-55-142-128-156.8V32c0-17.7-14.3-32-32-32zm45.3 493.3c12-12 18.7-28.3 18.7-45.3H224 160c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7z"></path>
                 </svg>
-                <span id="notification-count" class="badge badge-success badge-sm text-xs indicator-item">{{request.COOKIES.token|get_user_notifications_count:request.COOKIES.user}}</span>
+                <span id="notification-count" class="badge badge-warning badge-sm text-xs indicator-item">{{request.COOKIES.token|get_user_notifications_count:request.COOKIES.user}}</span>
               </div>
             </div>
             <div tabindex="0" class="dropdown-content text-center z-[1] menu  shadow bg-base-100 rounded-box space-y-2 p-2">
               {% with user_notifications=request.COOKIES.token|get_user_notifications:request.COOKIES.user %}
                 {% for notification in user_notifications %}
-                  <div class="flex flex-row justify-between items-center w-96 space-x-1 hover-highlight">
+                  <div class="flex flex-row justify-between items-center w-96 space-x-1 hover-highlight" onclick="updateNotification(this,{{notification.id}})">
                     <div class="avatar w-10">
                       <div class="rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
                         <img src="{{gateway_url|get_gateway_url}}/{{notification.userImage}}"  />
@@ -129,14 +130,23 @@
                     </div>
                     <span class="w-12">{{notification.createdAt|format_relative_time}}</span>
                     {% if not notification.seen%}
-                      <span class="w-3 h-3 bg-blue-500 rounded-full"></span>
+                      <span 
+                        id="notification-status" 
+                        style="display: block" 
+                        class="w-3 h-3 bg-blue-500 rounded-full" 
+                        onclick="this.style.display='none'"
+                      ></span>
                     {% else %}
                       <span class="w-3"></span>
                     {% endif %}
                   </div>
                 {% endfor %}
               {% endwith %}
-              <div class="text-center hover-highlight"><a>See All Notification</a></div>
+              {% if request.COOKIES.token|get_user_all_notifications_count:request.COOKIES.user > 5 %}
+              <div class="text-center hover-highlight">
+                <a>See All Notifications ({{request.COOKIES.token|get_user_all_notifications_count:request.COOKIES.user}})</a>
+              </div>
+              {% endif %}
             </div>
           </div>
         {% endif %}
@@ -255,6 +265,29 @@
 
       function getCSRFToken() {
         return document.getElementsByName('csrfmiddlewaretoken')[0].value;
+      }
+
+      function updateNotification(element,notificationId) {
+        // Unfortunately this is not possible cause the template notificationId should be set in server and cannot be changed in client
+        {% comment %} {{request.COOKIES.token|delete_notification:notificationId}}  or {{request.COOKIES.token|update_notification:notificationId}} {% endcomment %}
+        const token = "{{request.COOKIES.token}}"
+        try{
+          const options = {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          };
+          const url = `{{notification_url|get_notification_url}}/api/notifications/${notificationId}`;
+          axios.patch(url, {seen : true}, options);
+          // Update UI
+          element.children[3].style.display='none';
+          var notificationItemsCountElement = document.getElementById('notification-count');
+          var notificationItemsCount = +notificationItemsCountElement.innerHTML - 1;
+          notificationItemsCountElement.innerHTML = notificationItemsCount;
+        }
+        catch(error){
+          console.log(error);
+        }
       }
     </script>
 
