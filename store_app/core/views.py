@@ -4,7 +4,7 @@ import pytz
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Avg
 from django.middleware.csrf import get_token
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.csrf import csrf_exempt
 from django.core.paginator import Paginator
 from django import forms
@@ -18,6 +18,9 @@ from store_app.core.forms import AddToCartForm, DeleteCartForm, DeleteCartItemsF
 from store_app.api.models import Cart, CartItem, Product, ProductImage, Review
 from store_app.api.serializer import AddCartItemSerializer, CartSerializer
 from store_app.tools.helpers import *
+from store_app.core.signals import notification_signal
+from store_app.core.models import WebsocketSignalTrigger
+
 
 def getUserToken(request):
     cookies_obj = {}
@@ -151,6 +154,8 @@ def login_page(request):
                 logger.info(f"current_user is : {current_user}")
 
                 response = HttpResponseRedirect('/')
+                # response.set_cookie("token", token)
+                # response.set_cookie("user", json.dumps(current_user))
                 response.set_cookie("token", token, secure=True, httponly=True)
                 response.set_cookie("user", json.dumps(current_user), secure=True, httponly=True)
                 return response
@@ -202,6 +207,8 @@ def register_page(request):
                     logger.info(f"current_user is : {current_user}")
 
                     response = HttpResponseRedirect('/')
+                    # response.set_cookie("token", token)
+                    # response.set_cookie("user", json.dumps(current_user))
                     response.set_cookie("token", token, secure=True, httponly=True)
                     response.set_cookie("user", json.dumps(current_user), secure=True, httponly=True)
                     return response
@@ -360,6 +367,7 @@ def create_or_update_cart(request):
     token = None
     user =  None
     cart_id = None
+    created_notification = None
     cookies = getUserToken(request)
     if cookies:
         token=cookies.get('token', None)
@@ -409,13 +417,17 @@ def create_or_update_cart(request):
                     "sender": user.get('email', None),
                     "title": "Cart Updated" if cart_items.count() > 1 else "Cart Created",
                     "userId": user.get('id', None),
-                    "username": user.get('username', None),
-                    "userEmail": user.get('email', None),
+                    # "username": user.get('username', None),
+                    # "userEmail": user.get('email', None),
+                    "username": "admin",
+                    "userEmail": "admin@domain.com",
                     "userImage": user.get('avatarUrl', None),
+                    "externalArgs": json.dumps({"sender_name" : user.get('username', None)})
                 }
-                notification.add_user_notification(payload=notification_payload)
+                created_notification = notification.add_user_notification(payload=notification_payload)
             except Exception as error:
                 logger.error(f"Failed to post notification : {error}")
+
 
         response = render(
             request=request,
@@ -426,7 +438,26 @@ def create_or_update_cart(request):
             )
         
         if not cookies.get('cart_id', None):
+            # response.set_cookie('cart_id', cart_id)
             response.set_cookie('cart_id', cart_id, httponly=True, secure=True)
+        logger.info(f"Cart id is : {cart_id}")
+        if created_notification:
+            # Send Notification signal to django channels websocket
+            logger.info(f"Sending notification signal to django channels websocket")
+            notification_signal.send(
+                sender=user['email'], 
+                notification=created_notification, 
+                notification_sender=created_notification['sender'], 
+                notification_receiver=created_notification['userEmail'],
+                )
+            # Trigger Notification Signal by creating a WebsocketSignalTrigger object
+            # socket_data = {
+            #     "sender" : user['email'], 
+            #     "notification" : created_notification, 
+            #     "notification_sender" : created_notification['sender'], 
+            #     "notification_receiver" : created_notification['userEmail']
+            # }
+            # WebsocketSignalTrigger.objects.create(socket_data=socket_data)
         return response
     else:
         logger.error(f"Form not valid : {form.errors}")
