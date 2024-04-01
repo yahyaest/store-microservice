@@ -39,6 +39,10 @@ def get_notification_url(value):
     return settings.NOTIFICATION_BASE_URL
 
 @register.filter()
+def get_ws_base_url(value):
+    return settings.WS_BASE_URL
+
+@register.filter()
 def get_user_image(value):
     user = json.loads(value)
     return user.get('avatarUrl', 'https://cdn-icons-png.flaticon.com/512/666/666201.png')
@@ -182,3 +186,11 @@ def delete_notification(value, value2):
     except Exception as e:
         logger.error(f"Error getting user notifications: {e}")
         return None
+
+@register.filter()
+def get_current_user_email(value):
+    try:
+        logger.info(f"Getting user email: {value}")
+        return json.loads(value).get('email')
+    except Exception as e:
+        logger.error(f"Error getting user email: {e}")

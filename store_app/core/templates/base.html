@@ -9,7 +9,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}{% endblock %} | Game Market App</title>
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <link
       href="https://cdn.jsdelivr.net/npm/daisyui@4.6.0/dist/full.min.css"
       rel="stylesheet"
@@ -25,14 +25,16 @@
       integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" 
       crossorigin="anonymous"
     ></script>
+    <script src="https://unpkg.com/htmx.org@1.9.11/dist/ext/ws.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios@1.6.7/dist/axios.min.js"></script>
   </head>
   <body 
     hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' 
     hx-on="htmx-added: document.body.style.backgroundColor = '#aaa';"
+    hx-ext="ws"  ws-connect="{{ws_base_url|get_ws_base_url}}/ws/notifications/"
   >
-
-
+    {% comment %} This is a hidden span to get the current user email {% endcomment %}
+    <span id="current-user-span" style="display: none">{{request.COOKIES.user|get_current_user_email}}</span>
     <nav class="navbar sticky top-0 z-50 bg-error">
       <div class="flex-1">
         <a href="{% url 'home' %}" class="btn btn-ghost text-xl">Game Market App</a>
@@ -97,8 +99,8 @@
 
         {% comment %} Notification Dropdown {% endcomment %}
         {% if request.COOKIES.token %}
-          <div class="dropdown dropdown-end mx-1">
-            <div tabindex="0" role="button" class="btn btn-ghost btn-circle">
+          <div id="notification-container" class="dropdown dropdown-end mx-1">
+            <div tabindex="0" role="button" class="btn btn-ghost btn-circle" onclick="disableNotificationCounterAnimation()">
               <div class="indicator">
                 <svg 
                   class="h-5 w-5"
@@ -112,10 +114,18 @@
                 >
                   <path d="M224 0c-17.7 0-32 14.3-32 32V51.2C119 66 64 130.6 64 208v18.8c0 47-17.3 92.4-48.5 127.6l-7.4 8.3c-8.4 9.4-10.4 22.9-5.3 34.4S19.4 416 32 416H416c12.6 0 24-7.4 29.2-18.9s3.1-25-5.3-34.4l-7.4-8.3C401.3 319.2 384 273.9 384 226.8V208c0-77.4-55-142-128-156.8V32c0-17.7-14.3-32-32-32zm45.3 493.3c12-12 18.7-28.3 18.7-45.3H224 160c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7z"></path>
                 </svg>
-                <span id="notification-count" class="badge badge-warning badge-sm text-xs indicator-item">{{request.COOKIES.token|get_user_notifications_count:request.COOKIES.user}}</span>
+                <span class="badge badge-warning badge-sm text-xs indicator-item">
+                  <span id="notification-count">{{request.COOKIES.token|get_user_notifications_count:request.COOKIES.user}}</span>
+                  <span 
+                    id="notification-counter-animation" 
+                    style="display: none"
+                    class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-600 opacity-90"
+                    ></span>
+                </span>
               </div>
             </div>
-            <div tabindex="0" class="dropdown-content text-center z-[1] menu  shadow bg-base-100 rounded-box space-y-2 p-2">
+            <div id="notification-dropdown" tabindex="0" class="dropdown-content text-center z-[1] menu  shadow bg-base-100 rounded-box space-y-2 p-2">
+              {% comment %} {% include 'partials/navbar_notifications.html' %}  {% endcomment %}
               {% with user_notifications=request.COOKIES.token|get_user_notifications:request.COOKIES.user %}
                 {% for notification in user_notifications %}
                   <div class="flex flex-row justify-between items-center w-96 space-x-1 hover-highlight" onclick="updateNotification(this,{{notification.id}})">
@@ -144,7 +154,7 @@
               {% endwith %}
               {% if request.COOKIES.token|get_user_all_notifications_count:request.COOKIES.user > 5 %}
               <div class="text-center hover-highlight">
-                <a>See All Notifications ({{request.COOKIES.token|get_user_all_notifications_count:request.COOKIES.user}})</a>
+                <a>See All Notifications (<span id="all-notification-count">{{request.COOKIES.token|get_user_all_notifications_count:request.COOKIES.user}}</span>)</a>
               </div>
               {% endif %}
             </div>
@@ -250,46 +260,12 @@
       </aside>
     </footer>
 
-    <script>
-      function changeTheme(theme) {
-        document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('selectedTheme', theme);
-        let obj = document.getElementById("theme");
-        obj.innerText = `Theme - ${theme}`;
-      }
-     // Check if a theme is stored in localStorage
-      const storedTheme = localStorage.getItem('selectedTheme');
-      if (storedTheme) {
-        changeTheme(storedTheme);
-      }
-
-      function getCSRFToken() {
-        return document.getElementsByName('csrfmiddlewaretoken')[0].value;
-      }
-
-      function updateNotification(element,notificationId) {
-        // Unfortunately this is not possible cause the template notificationId should be set in server and cannot be changed in client
-        {% comment %} {{request.COOKIES.token|delete_notification:notificationId}}  or {{request.COOKIES.token|update_notification:notificationId}} {% endcomment %}
-        const token = "{{request.COOKIES.token}}"
-        try{
-          const options = {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          };
-          const url = `{{notification_url|get_notification_url}}/api/notifications/${notificationId}`;
-          axios.patch(url, {seen : true}, options);
-          // Update UI
-          element.children[3].style.display='none';
-          var notificationItemsCountElement = document.getElementById('notification-count');
-          var notificationItemsCount = +notificationItemsCountElement.innerHTML - 1;
-          notificationItemsCountElement.innerHTML = notificationItemsCount;
-        }
-        catch(error){
-          console.log(error);
-        }
-      }
+    <script type="text/javascript">
+      var base_token = "{{request.COOKIES.token}}"
+      var base_notificationBaseUrl = "{{notification_url|get_notification_url}}"
+      var base_websocketBaseUrl = "{{ws_base_url|get_ws_base_url}}"
     </script>
+    <script src="{% static 'js/base.js' %}"></script>
 
     {% block scripts %}
     {% endblock %}
