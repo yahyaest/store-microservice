@@ -32,20 +32,30 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 CORS_ALLOW_ALL_ORIGINS = True
 
+# Set SECURE_CROSS_ORIGIN_OPENER_POLICY to None in order to avoid the following error:
+# The Cross-Origin-Opener-Policy header has been ignored, because the URL's origin was untrustworthy. It was defined either in the final response or a redirect. Please deliver the response using the HTTPS protocol. You can also use the 'localhost' origin instead.
+# Error use case : use django server ip address to access the application instead of localhost
+# https://stackoverflow.com/questions/72496666/the-cross-origin-opener-policy-header-has-been-ignored-django
+# SECURE_CROSS_ORIGIN_OPENER_POLICY = None
+
 # Settings from environment
 env = environ.Env(
     DATABASE_URL=(str, 'psql://postgres:postgres@postgres:5432/store'),
+    WS_BASE_URL=(str, None),
     GATEWAY_BASE_URL=(str, None),
     NOTIFICATION_BASE_URL=(str, None)
 )
 
 DATABASE_URL = env('DATABASE_URL')
+WS_BASE_URL = env('WS_BASE_URL')
 GATEWAY_BASE_URL = env('GATEWAY_BASE_URL')
 NOTIFICATION_BASE_URL = env('NOTIFICATION_BASE_URL')
 
 # Application definition
 
 INSTALLED_APPS = [
+    'channels',
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -57,6 +67,7 @@ INSTALLED_APPS = [
     'django_filters',
     'multiselectfield',
     'django_htmx',
+    'django_extensions',
     'template_partials',
     'embed_video',
     'store_app.core',
@@ -171,6 +182,21 @@ REST_FRAMEWORK = {
     ]
 }
 
+# Channels
+ASGI_APPLICATION = "store_app.asgi.application"
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels.layers.InMemoryChannelLayer"
+#     }
+# }
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis", 6379)],
+        },
+    },
+}
 
 import datetime
 import logging
@@ -209,6 +235,11 @@ LOGGING = {
     },
     'loggers': {
         'django.request': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'django.channels.server': {
             'handlers': ['console'],
             'level': 'INFO',
             'propagate': True,
