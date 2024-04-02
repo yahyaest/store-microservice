@@ -417,10 +417,10 @@ def create_or_update_cart(request):
                     "sender": user.get('email', None),
                     "title": "Cart Updated" if cart_items.count() > 1 else "Cart Created",
                     "userId": user.get('id', None),
-                    # "username": user.get('username', None),
-                    # "userEmail": user.get('email', None),
-                    "username": "admin",
-                    "userEmail": "admin@domain.com",
+                    "username": user.get('username', None),
+                    "userEmail": user.get('email', None),
+                    # "username": "admin",
+                    # "userEmail": "admin@domain.com",
                     "userImage": user.get('avatarUrl', None),
                     "externalArgs": json.dumps({"sender_name" : user.get('username', None)})
                 }
@@ -441,15 +441,15 @@ def create_or_update_cart(request):
             # response.set_cookie('cart_id', cart_id)
             response.set_cookie('cart_id', cart_id, httponly=True, secure=True)
         logger.info(f"Cart id is : {cart_id}")
-        if created_notification:
+        # if created_notification:
             # Send Notification signal to django channels websocket
-            logger.info(f"Sending notification signal to django channels websocket")
-            notification_signal.send(
-                sender=user['email'], 
-                notification=created_notification, 
-                notification_sender=created_notification['sender'], 
-                notification_receiver=created_notification['userEmail'],
-                )
+            # logger.info(f"Sending notification signal to django channels websocket")
+            # notification_signal.send(
+            #     sender=user['email'], 
+            #     notification=created_notification, 
+            #     notification_sender=created_notification['sender'], 
+            #     notification_receiver=created_notification['userEmail'],
+            #     )
             # Trigger Notification Signal by creating a WebsocketSignalTrigger object
             # socket_data = {
             #     "sender" : user['email'], 

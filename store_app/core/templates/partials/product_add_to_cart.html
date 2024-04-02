@@ -9,7 +9,7 @@
     id="add-to-cart"
     class="modal-box"
     hx-post="{% url 'create-or-update-cart' %}"
-    hx-on::after-request="closeModal(); updateCartNavbarInfo();"
+    hx-on::after-request="closeModal(); updateCartNavbarInfo(); updateNotificationNavbarSection();"
     hx-target="#my_modal"
     hx-swap="afterbegin"
   >
@@ -56,10 +56,12 @@ and made another request {% endcomment %}
 
 {% block scripts%}
 <script>
+  // Set event listener for quantity input
   document.getElementById('quantity').addEventListener('input', function() {
     updatePrice();
   });
 
+  // Update price and show warning if quantity is more than inventory
   function updatePrice() {
     var inventory = {{ product_inventory }};
     var quantity = document.getElementById('quantity').value;
@@ -74,6 +76,7 @@ and made another request {% endcomment %}
     }
   }
 
+  // Close modal
   function closeModal() {
     var closeModalForm = document.evaluate('//dialog[@id="my_modal"]', document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
     if (closeModalForm) {
@@ -81,6 +84,7 @@ and made another request {% endcomment %}
     }
   }
 
+  // Update cart navbar info
   function updateCartNavbarInfo(){
     var cartItemsCountElement = document.getElementById('cart-count');
     var cartTotalPriceElement = document.getElementById('cart-value');
@@ -93,5 +97,18 @@ and made another request {% endcomment %}
       cartTotalPriceElement.innerHTML = cartTotalPrice;
     }
   }
+
+  // Update notification navbar section
+  function updateNotificationNavbarSection() {
+    var notificationCountElement = document.getElementById('notification-count');
+    var allNotificationCountElement = document.getElementById('all-notification-count');
+    if (notificationCountElement && allNotificationCountElement) {
+      var notificationCount = +notificationCountElement.innerHTML;
+      notificationCountElement.innerHTML = notificationCount + 1;
+      var allNotificationCount = +allNotificationCountElement.innerHTML;
+      allNotificationCountElement.innerHTML = allNotificationCount + 1;
+    }
+  }
+
 </script>
 {% endblock %}
