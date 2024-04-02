@@ -83,7 +83,7 @@ def format_relative_time(value):
     minutes_difference = seconds_difference // 60
     hours_difference = minutes_difference // 60
     days_difference = hours_difference // 24
-    months_difference = days_difference // 30.44
+    months_difference = days_difference // 30
     years_difference = months_difference // 12
 
     if years_difference > 0:
