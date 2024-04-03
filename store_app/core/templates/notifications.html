@@ -1,0 +1,184 @@
+{% extends 'base.html' %} 
+{% load custom_filters %} 
+{% block title%}Notifications{% endblock %} 
+{%block content %}
+<div class="text-center mx-auto md:p-16">
+  <div role="tablist" class="tabs tabs-bordered">
+    <input
+      id="all-notifications"
+      type="radio"
+      name="my_tabs_1"
+      role="tab"
+      class="tab"
+      aria-label="All"
+      {% if display_all_notifications %}checked{%endif %} 
+    />
+    <div role="tabpanel" class="tab-content p-2"></div>
+
+    <input
+      id="unread-notifications"
+      type="radio"
+      name="my_tabs_1"
+      role="tab"
+      class="tab"
+      aria-label="Unread Notification"
+      {% if not display_all_notifications %}checked{%endif %} 
+    />
+    <div role="tabpanel" class="tab-content p-2"></div>
+
+    {% if not all_notifications_seen %}
+    <input
+      type="radio"
+      name="my_tabs_1"
+      role="tab"
+      class="tab"
+      aria-label="Mark All As Read"
+      onclick="markAllNotificationAsRead()"
+    />
+    {%endif %}
+    <div role="tabpanel" class="tab-content p-2"></div>
+  </div>
+  {% if notifications %}
+  <h1 class="text-center text-error text-3xl font-bold my-5">
+    {{notification_count}} {% if not display_all_notifications %}Unread{%endif %} Notifications
+  </h1>
+  <table class="table text-center">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Title</th>
+        <th>Message</th>
+        <th>Sent At</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for notification in notifications %}
+      <tr>
+        <td>
+          <div class="flex items-center gap-3">
+            <div class="avatar">
+              <div class="mask mask-squircle w-12 h-12">
+                <img
+                  src="{{gateway_url|get_gateway_url}}/{{notification.userImage}}"
+                  alt="{{notification.userImage}}"
+                />
+              </div>
+            </div>
+            <div>
+              <div class="font-bold">{{notification.sender}}</div>
+            </div>
+          </div>
+        </td>
+        <td>{{notification.title}}</td>
+        <td>{{notification.message}}</td>
+        <td>{{notification.createdAt|format_relative_time}}</td>
+        <th>
+          {% if not notification.seen%}
+          <button
+            class="btn btn-sm btn-warning"
+            onclick="markNotificationAsRead({{notification.id}})"
+          >
+            Mark As Read
+          </button>
+          {% endif %}
+        </th>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% comment %} Pagination {% endcomment %}
+  <div class="join my-5">
+    {% for i in page_range %} 
+    <input 
+     class="join-item btn btn-square"
+     type="radio" 
+     name="options" 
+     aria-label="{{i}}"
+     onclick="location.href='?page={{ i }}';" 
+     {% if i == current_page %}checked{%endif %} 
+     /> 
+    {% endfor %}
+  </div>
+  {%else%}
+  <h1 class="text-center text-error text-3xl font-bold my-5">
+    You have 0 {% if not display_all_notifications %}Unread{%endif %} Notifications
+  </h1>
+  {% endif %}
+</div>
+{% endblock %} 
+
+{% block scripts %}
+<script>
+  document
+    .getElementById("unread-notifications")
+    .addEventListener("click", function () {
+      location.href = "/unread_notifications"
+    });
+
+  document
+    .getElementById("all-notifications")
+    .addEventListener("click", function () {
+      location.href = "/notifications"
+    });
+
+    function markNotificationAsRead(notificationId) {
+     const notificationBaseUrl = "{{notification_url|get_notification_url}}";
+     const token = "{{request.COOKIES.token}}";
+     fetch(`${notificationBaseUrl}/api/notifications/${notificationId}/`, {
+      method: "PATCH",
+      headers: {
+       "Content-Type": "application/json",
+       Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+       seen: true,
+      }),
+     })
+     .then((response) => response.json())
+     .then((data) => {
+      if (data) {
+          const displayAllNotification = "{{display_all_notifications}}" === "True";
+          const notificationCount = "{{notification_count}}"
+          const pageSize = 20
+          const urlParams = new URLSearchParams(window.location.search);
+          const currentPage = urlParams.get('page');
+          const isCurrentPageEmpty = (notificationCount - 1) / pageSize === currentPage - 1
+          if (!displayAllNotification && isCurrentPageEmpty) {
+            location.href = `/unread_notifications?page=${currentPage - 1}`;
+          } else {
+            location.reload();
+          }
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
+  }
+
+  function markAllNotificationAsRead() {
+    const notificationBaseUrl = "{{notification_url|get_notification_url}}";
+    const token = "{{request.COOKIES.token}}";
+
+    fetch(`${notificationBaseUrl}/api/bulk_notifications/`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        seen: true,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data) {
+          location.reload();
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
+  }
+</script>
+{% endblock %}

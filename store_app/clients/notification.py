@@ -1,3 +1,4 @@
+import json
 import requests
 from store_app import settings
 from store_app.clients.gateway import Gateway
@@ -20,6 +21,9 @@ class Notification:
             headers['Content-Type'] = 'application/json'
             headers['Authorization'] = f'Bearer {self.token}'
 
+            if not payload.get("externalArgs", None):
+                payload["externalArgs"] = json.dumps({})
+
             response = requests.post(url=self.notification_url, verify=False, json=payload, headers=headers)
             if response.status_code == 200:
                 notification = response.json()
@@ -32,10 +36,10 @@ class Notification:
         except Exception as error:
             logger.error(f"Failed to create notification: {error}")
 
-    def add_product_owner_notification(self, app_signin_payload, product_owner, data):
+    def add_target_user_notification(self, app_signin_payload, target_user, data):
         try:
             gateway = Gateway()
-            product_owner_user = gateway.get_user_by_email(email=product_owner, use_admin_token=True, admin_credentials=app_signin_payload)
+            target_user_user = gateway.get_user_by_email(email=target_user, use_admin_token=True, admin_credentials=app_signin_payload)
             if not gateway.token:
                 raise ValueError("No token was provided. Failed to post notification")
 
@@ -44,10 +48,10 @@ class Notification:
             headers['Authorization'] = f'Bearer {gateway.token}'
 
             payload = {
-                "userEmail": product_owner_user["email"],
-                "username": product_owner_user["username"],
+                "userEmail": target_user_user["email"],
+                "username": target_user_user["username"],
                 "userImage": data["userImage"],
-                "userId": product_owner_user["id"],
+                "userId": target_user_user["id"],
                 "title": data["title"],
                 "message": data["message"],
                 "seen": False,

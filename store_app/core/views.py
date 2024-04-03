@@ -1,3 +1,4 @@
+import math
 import json
 from datetime import datetime
 import pytz
@@ -236,7 +237,7 @@ def logout_view(request):
 
 def products_page(request):
     products_list = Product.objects.all()
-    pages = len(products_list) // 20 + 1
+    pages =  math.ceil(len(products_list) / 20)
     page_range = list(range(1, pages + 1))
     paginator = Paginator(products_list, 20)
 
@@ -322,6 +323,85 @@ def cart_page(request):
     except Exception as error:
         logger.error(f"Error in cart page : {error}")
         return render(request=request, template_name='cart.html')
+
+def notifications_page(request):
+    try:
+        cookies = getUserToken(request)
+        if cookies:
+            token = cookies.get('token', None)
+            user = cookies.get('user', None)
+
+            logger.info(f"Getting notifications for user: {user['email']}")
+            notification_app = Notification()
+            notification_app.token = token
+
+            all_user_notifications : list = notification_app.get_user_notifications(email=user['email'])
+            all_user_notifications.sort(key=lambda x: x['createdAt'], reverse=True)
+            notification_count = len(all_user_notifications)
+
+            pages =  math.ceil(len(all_user_notifications) / 20)
+            page_range = list(range(1, pages + 1))
+            paginator = Paginator(all_user_notifications, 20)
+
+            page_number = request.GET.get('page') if request.GET.get('page') else 1
+            user_notifications = paginator.get_page(page_number)
+            logger.info(f"all seen: {sum(1 for x in all_user_notifications if x['seen'])}")
+
+        return render(
+            request=request, 
+            template_name='notifications.html', 
+            context={
+                "notifications": user_notifications,
+                "notification_count": notification_count,
+                "display_all_notifications": True,
+                "all_notifications_seen": sum(1 for x in all_user_notifications if not x['seen']) == 0,
+                "page_range": page_range, 
+                "current_page": int(page_number)
+                }
+            )
+    except Exception as error:
+        logger.error(f"Error in notifications page : {error}")
+        return render(request=request, template_name='notifications.html')
+
+def unread_notifications_page(request):
+    try:
+        cookies = getUserToken(request)
+        if cookies:
+            token = cookies.get('token', None)
+            user = cookies.get('user', None)
+
+            logger.info(f"Getting notifications for user: {user['email']}")
+            notification_app = Notification()
+            notification_app.token = token
+
+            all_user_notifications : list = notification_app.get_user_notifications(email=user['email'])
+            all_user_notifications = [notification for notification in all_user_notifications if not notification.get('seen')]
+            all_user_notifications.sort(key=lambda x: x['createdAt'], reverse=True)
+            notification_count = len(all_user_notifications)
+
+            pages =  math.ceil(len(all_user_notifications) / 20)
+            page_range = list(range(1, pages + 1))
+            paginator = Paginator(all_user_notifications, 20)
+
+            page_number = request.GET.get('page') if request.GET.get('page') else 1
+            user_notifications = paginator.get_page(page_number)
+
+        return render(
+            request=request, 
+            template_name='notifications.html', 
+            context={
+                "notifications": user_notifications,
+                "notification_count": notification_count,
+                "display_all_notifications": False,
+                "all_notifications_seen": not len(all_user_notifications) > 0,
+                "page_range": page_range, 
+                "current_page": int(page_number)
+                }
+            )
+    except Exception as error:
+        logger.error(f"Error in notifications page : {error}")
+        return render(request=request, template_name='notifications.html')
+
 
 @require_POST
 def submit_product_review(request):
