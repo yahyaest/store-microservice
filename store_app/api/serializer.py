@@ -199,17 +199,50 @@ class UpdateCartItemSerializer(serializers.ModelSerializer):
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product = SimpleProductSerializer()
+    total_price = serializers.SerializerMethodField()
+    total_price_after_discount = serializers.SerializerMethodField()
+
+    def get_total_price_after_discount(self, order_item: OrderItem):
+        product_promotions = order_item.product.promotions.all()
+        promotion_expiration_date = product_promotions[0].expire_at if product_promotions else None
+        if promotion_expiration_date and promotion_expiration_date > datetime.datetime.now(pytz.timezone('UTC')):
+            return order_item.quantity * order_item.product.price * (1 - product_promotions[0].discount/100)
+        else:
+            return order_item.quantity * order_item.product.price
+
+    def get_total_price(self, order_item: CartItem):
+        return order_item.quantity * order_item.product.price
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'placed_at', 'product', 'unit_price', 'quantity']
+        fields = ['id', 'placed_at', 'product', 'unit_price', 'quantity', 'total_price', 'total_price_after_discount']
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
+    items_count = serializers.SerializerMethodField()
+    total_price = serializers.SerializerMethodField()
+    total_price_after_discount = serializers.SerializerMethodField()
+
+    def get_items_count(self, order):
+        return sum([item.quantity for item in order.items.all()])
+
+    def get_total_price_after_discount(self, order):
+        total_price = 0
+        for item in order.items.all():
+            product_promotions = item.product.promotions.all()
+            promotion_expiration_date = product_promotions[0].expire_at if product_promotions else None
+            if promotion_expiration_date and promotion_expiration_date > datetime.datetime.now(pytz.timezone('UTC')):
+                total_price = total_price + item.quantity * item.product.price * (1 - product_promotions[0].discount/100)
+            else:
+                total_price = total_price + item.quantity * item.product.price
+        return total_price
+
+    def get_total_price(self, order):
+        return sum([item.quantity * item.product.price for item in order.items.all()])
 
     class Meta:
         model = Order
-        fields = ['id', 'placed_at', 'last_update', 'payment_status', 'customer_name', 'customer_email', 'items']
+        fields = ['id', 'placed_at', 'last_update', 'payment_status', 'customer_name', 'customer_email', 'items', 'items_count', 'total_price', 'total_price_after_discount']
 
 
 class UpdateOrderSerializer(serializers.ModelSerializer):
@@ -220,40 +253,51 @@ class UpdateOrderSerializer(serializers.ModelSerializer):
 
 class CreateOrderSerializer(serializers.Serializer):
     cart_id = serializers.UUIDField()
+    customer_email = serializers.EmailField()
+    customer_name = serializers.CharField()
 
     def validate_cart_id(self, cart_id):
-        if not Cart.objects.filter(pk=cart_id).exists():
-            raise serializers.ValidationError(
-                'No cart with the given ID was Found ❌')
-        if CartItem.objects.filter(cart_id=cart_id).count() == 0:
-            raise serializers.ValidationError('Cart is empty 💢')
-        return cart_id
+        try:
+            if not Cart.objects.filter(pk=cart_id).exists():
+                raise serializers.ValidationError(
+                    'No cart with the given ID was Found ❌')
+            if CartItem.objects.filter(cart_id=cart_id).count() == 0:
+                raise serializers.ValidationError('Cart is empty 💢')
+            return cart_id
+        except Exception as e:
+            logger.error(f"{traceback.format_exc()}")
+            raise e
 
     def save(self, **kwargs):
-        with transaction.atomic():
-            cart_id = self.validated_data['cart_id']
+        try:
+            with transaction.atomic():
+                cart_id = self.validated_data['cart_id']
+                customer_email = self.validated_data['customer_email']
+                customer_name= self.validated_data['customer_name']
 
-            order = Order.objects.create(customer_name= self.validated_data['customer_name'])
+                order = Order.objects.create(customer_name=customer_name, customer_email=customer_email)
 
-            cart_items = CartItem.objects \
-                .select_related('product') \
-                .filter(cart_id=cart_id)
-            order_items = [
-                OrderItem(
-                    order=order,
-                    product=item.product,
-                    unit_price=item.product.unit_price,
-                    quantity=item.quantity
-                ) for item in cart_items
-            ]
-            OrderItem.objects.bulk_create(order_items)
+                cart_items = CartItem.objects \
+                    .select_related('product') \
+                    .filter(cart_id=cart_id)
+                order_items = [
+                    OrderItem(
+                        order=order,
+                        product=item.product,
+                        unit_price=item.product.price,
+                        quantity=item.quantity,
+                    ) for item in cart_items
+                ]
+                OrderItem.objects.bulk_create(order_items)
 
-            Cart.objects.filter(pk=cart_id).delete()
+                Cart.objects.filter(pk=cart_id).delete()
 
-            order_created.send_robust(sender=self.__class__, order=order)
+                order_created.send_robust(sender=self.__class__, order=order)
 
-            return order
-        
+                return order
+        except Exception as e:
+            logger.error(f"{traceback.format_exc()}")
+            raise e
 
 class ShippingSerializer(serializers.ModelSerializer):
     class Meta:
