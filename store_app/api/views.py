@@ -10,9 +10,9 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
 from .permissions import IsAdminOrReadOnly, IsAuthenticatedOrReadOnly
 from .pagination import DefaultPagination
-from .filters import ProductFilter
+from .filters import OrderFilter, ProductFilter
 from .models import Cart, CartItem, Collection, Order, OrderItem, Payment, Product, ProductImage, Promotion, Review, Shipping, Tag
-from .serializer import AddCartItemSerializer, CartItemSerializer, CartSerializer, CollectionSerializer, CreateOrderSerializer, OrderSerializer, PaymentSerializer, ProductImageSerializer, ProductSerializer, PromotionSerializer, ReviewSerializer, ShippingSerializer, TagSerializer, UpdateCartItemSerializer, UpdateOrderSerializer
+from .serializer import AddCartItemSerializer, CartItemSerializer, CartSerializer, CollectionSerializer, CreateOrderSerializer, OrderItemSerializer, OrderSerializer, PaymentSerializer, ProductImageSerializer, ProductSerializer, PromotionSerializer, ReviewSerializer, ShippingSerializer, TagSerializer, UpdateCartItemSerializer, UpdateOrderSerializer
 
 # Create your views here.
 
@@ -133,6 +133,9 @@ class CartItemViewSet(ModelViewSet):
     
 class OrderViewSet(ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = OrderFilter
 
     # def get_permissions(self):
     #     if self.request.method in ['PATCH', 'DELETE']:
@@ -162,7 +165,18 @@ class OrderViewSet(ModelViewSet):
             return Order.objects.all()
 
         return Order.objects.filter(customer_name=user.username)
-    
+
+class OrderItemViewSet(ModelViewSet):
+    queryset = OrderItem.objects.all()
+    serializer_class = OrderItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return OrderItem.objects.filter(order_id=self.kwargs['order_pk']).select_related('product')
+
+    def get_serializer_context(self):
+        return {'order_id': self.kwargs['order_pk']}
+
 class ShippingViewSet(ModelViewSet):
     queryset = Shipping.objects.all()
     serializer_class = ShippingSerializer
