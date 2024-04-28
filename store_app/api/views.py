@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated
 
 from .permissions import IsAdminOrReadOnly, IsAuthenticatedOrReadOnly
 from .pagination import DefaultPagination
-from .filters import OrderFilter, ProductFilter
+from .filters import OrderFilter, PaymentFilter, ProductFilter, ShippingFilter
 from .models import Cart, CartItem, Collection, Order, OrderItem, Payment, Product, ProductImage, Promotion, Review, Shipping, Tag
 from .serializer import AddCartItemSerializer, CartItemSerializer, CartSerializer, CollectionSerializer, CreateOrderSerializer, OrderItemSerializer, OrderSerializer, PaymentSerializer, ProductImageSerializer, ProductSerializer, PromotionSerializer, ReviewSerializer, ShippingSerializer, TagSerializer, UpdateCartItemSerializer, UpdateOrderSerializer
 
@@ -180,10 +180,14 @@ class OrderItemViewSet(ModelViewSet):
 class ShippingViewSet(ModelViewSet):
     queryset = Shipping.objects.all()
     serializer_class = ShippingSerializer
-    # permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = ShippingFilter
 
 
 class PaymentViewSet(ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
-    # permission_classes = [IsAdminOrReadOnly]
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = PaymentFilter
