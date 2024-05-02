@@ -14,7 +14,13 @@ from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.security.websocket import AllowedHostsOriginValidator
 
-from store_app.core.routing import websocket_urlpatterns
+from store_app.core.routing import core_app_websocket_urlpatterns
+from store_app.api.routing import api_app_websocket_urlpatterns
+from store_app.tools.helpers import logger
+
+websocket_urlpatterns = core_app_websocket_urlpatterns + api_app_websocket_urlpatterns
+
+logger.info(f"websocket_urlpatterns is : {websocket_urlpatterns}")
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'store_app.settings')
 

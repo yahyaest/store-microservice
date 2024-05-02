@@ -13,6 +13,7 @@ from .pagination import DefaultPagination
 from .filters import OrderFilter, PaymentFilter, ProductFilter, ShippingFilter
 from .models import Cart, CartItem, Collection, Order, OrderItem, Payment, Product, ProductImage, Promotion, Review, Shipping, Tag
 from .serializer import AddCartItemSerializer, CartItemSerializer, CartSerializer, CollectionSerializer, CreateOrderSerializer, OrderItemSerializer, OrderSerializer, PaymentSerializer, ProductImageSerializer, ProductSerializer, PromotionSerializer, ReviewSerializer, ShippingSerializer, TagSerializer, UpdateCartItemSerializer, UpdateOrderSerializer
+from store_app.tools.helpers import logger
 
 # Create your views here.
 
@@ -143,13 +144,18 @@ class OrderViewSet(ModelViewSet):
     #     return [IsAuthenticated()]
 
     def create(self, request, *args, **kwargs):
-        serializer = CreateOrderSerializer(
-            data=request.data,
-            context={'user_id': self.request.user.id})
-        serializer.is_valid(raise_exception=True)
-        order = serializer.save()
-        serializer = OrderSerializer(order)
-        return Response(serializer.data)
+        try:
+            logger.info(f"Creating order for {request.data.get('customer_email', None)} ")
+            serializer = CreateOrderSerializer(
+                data=request.data,
+                context={'user_id': self.request.user.id})
+            serializer.is_valid(raise_exception=True)
+            order = serializer.save()
+            serializer = OrderSerializer(order)
+            return Response(serializer.data)
+        except Exception as e:
+            logger.error(f"Error creating order: {e}")
+            return Response({'error': f'An error occurred while creating order {e}'}, status=status.HTTP_400_BAD_REQUEST)
 
     def get_serializer_class(self):
         if self.request.method == 'POST':

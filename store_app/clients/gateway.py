@@ -75,11 +75,13 @@ class Gateway:
             headers = {}
             headers['Content-Type'] = 'application/json'
             headers['Authorization'] = f'Bearer {self.token}'
-            current_user_url = f"{self.gateway_user_url}/?email={email}"
+            current_user_url = f"{self.gateway_user_url}?email={email}"
 
             r = requests.get(current_user_url, headers=headers)
             if r.status_code == 200:
-                user = r.json()
+                users = r.json()
+                user = users[0] if users else None
+                logger.info(f"Gateway Connector : User data: {user}")
                 return user
             else:
                 logger.error(f"=====> getting user {email} data failed --> failed")
@@ -108,6 +110,33 @@ class Gateway:
             logger.error(f"Error getting current user: {e}")
             return None
     
+    def get_user_image_by_email(self, email, use_admin_token=False, admin_credentials=None):
+        try:
+            if use_admin_token and admin_credentials:
+                logger.info("Using admin token to get user image")
+                self.login(admin_credentials) # set the token to the admin token
+            if not self.token:
+                raise ValueError(f"No token was provided. Failed to get user {email} image")
+            
+            headers = {}
+            headers['Content-Type'] = 'application/json'
+            headers['Authorization'] = f'Bearer {self.token}'
+            user_image_url = f"{self.gateway_images_url}?username={email}"
+
+            r = requests.get(user_image_url, headers=headers)
+            if r.status_code == 200:
+                user_image_list = r.json()
+                user_image = user_image_list[0] if user_image_list else None
+                return user_image
+            else:
+                logger.error(f"=====> getting user {email} image failed --> failed")
+                logger.error(r.status_code)
+                logger.error(r.text)
+            return None
+
+        except Exception as error:
+            logger.info(f"Error getting user {email} image: {error}")
+            
     def get_current_user_image(self):
         try:
             headers = {}

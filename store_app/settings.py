@@ -43,13 +43,17 @@ env = environ.Env(
     DATABASE_URL=(str, 'psql://postgres:postgres@postgres:5432/store'),
     WS_BASE_URL=(str, None),
     GATEWAY_BASE_URL=(str, None),
-    NOTIFICATION_BASE_URL=(str, None)
+    NOTIFICATION_BASE_URL=(str, None),
+    STORE_USERNAME=(str, 'store@domain.com'),
+    STORE_PASSWORD=(str, 'store')
 )
 
 DATABASE_URL = env('DATABASE_URL')
 WS_BASE_URL = env('WS_BASE_URL')
 GATEWAY_BASE_URL = env('GATEWAY_BASE_URL')
 NOTIFICATION_BASE_URL = env('NOTIFICATION_BASE_URL')
+STORE_USERNAME = env('STORE_USERNAME')
+STORE_PASSWORD = env('STORE_PASSWORD')
 
 # Application definition
 
