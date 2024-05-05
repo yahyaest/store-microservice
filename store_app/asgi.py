@@ -16,6 +16,7 @@ from channels.security.websocket import AllowedHostsOriginValidator
 
 from store_app.core.routing import core_app_websocket_urlpatterns
 from store_app.api.routing import api_app_websocket_urlpatterns
+from store_app.api.middleware.custom_channel_middleware import CustomAuthMiddlewareStack
 from store_app.tools.helpers import logger
 
 websocket_urlpatterns = core_app_websocket_urlpatterns + api_app_websocket_urlpatterns
@@ -26,9 +27,16 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'store_app.settings')
 
 application = get_asgi_application()
 
+# application = ProtocolTypeRouter({
+#     "http": application,
+#     "websocket": AllowedHostsOriginValidator(
+#             AuthMiddlewareStack(URLRouter(websocket_urlpatterns))
+#         ),
+# })
+
 application = ProtocolTypeRouter({
     "http": application,
     "websocket": AllowedHostsOriginValidator(
-            AuthMiddlewareStack(URLRouter(websocket_urlpatterns))
+            CustomAuthMiddlewareStack(URLRouter(websocket_urlpatterns))
         ),
 })

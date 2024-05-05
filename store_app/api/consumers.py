@@ -10,8 +10,13 @@ class NotificationConsumer(WebsocketConsumer):
         try:
             logger.info("Client try connecting to websocket")
             logger.info(self.channel_name)
-            self.GROUP_NAME = 'user-websocket-notifications'
-            self.user = self.scope['user']
+            self.user = self.scope.get('user', None)
+            
+            if not self.user:
+                self.close()
+                return
+            
+            self.GROUP_NAME = f"user-{self.user.get('username', '').replace('@', '_AT_')}-websocket-notifications"
             logger.info(f"Websocket NotificationConsumer Scope user {self.user}")
             
             query_params = parse_qs(self.scope['query_string'].decode('utf-8'))            
